@@ -19,6 +19,7 @@ request_file = sys.argv[1]
 file_name = sys.argv[2]
 program = sys.argv[3]
 usertype = sys.argv[4]
+poo = sys.argv[5]
 # start_date = sys.argv[4]
 # end_date = sys.argv[5]
 
@@ -180,7 +181,7 @@ column_mapping = {
     # Add more mappings as needed
 }
 
-def save_clean_list(row, control_number =  ''):
+def save_clean_list(row):
     if program == 'ECT':
         now = datetime.now().strftime("%Y-%m-%d")
 
@@ -195,16 +196,16 @@ def save_clean_list(row, control_number =  ''):
         now = datetime.now().strftime("%m/%d/%Y")
 
         row['DATE PROCESSED'] = now
-        row['CONTROL NUMBER'] = control_number
+        # row['CONTROL NUMBER'] = control_number
         values = [row[spreadsheet_column] for spreadsheet_column, database_column in column_mapping.items()]
         # if pd.isnull(values):
         #     print('null: ', row)
         # Construct the INSERT query dynamically
         query = "INSERT INTO aics_clean_list ({}) VALUES ({})".format(
-             ', '.join(column_mapping.values()),
+            ', '.join(column_mapping.values()),
             ', '.join(['%s'] * len(column_mapping))
         )
-        
+            
         cursor.execute(query, values)
         conn.commit()
 
@@ -226,14 +227,26 @@ def is_valid_date(date_series):
 # Function to extract initials from a full name
 def get_initials(province):
     parts = province.split()
-    if len(parts) >= 2:
-        return parts[0][0].upper() + parts[-1][0].upper()  # First letter of provinces
-    elif parts:
+    if province == 'DAVAO DEL SUR':
+        return 'DDS'
+    elif province == 'DAVAO DEL NORTE':
+        return 'DDN'
+    elif province == 'DAVAO DE ORO':
+        return 'DDO'
+    elif province == 'DAVAO ORIENTAL':
+        return 'DOR'
+    elif province == 'DAVAO OCCIDENTAL':
+        return 'DOC'
+    elif len(parts) == 3:
+        return parts[0][0].upper() + parts[1][0].upper() + parts[2][0].upper()  # First letter of provinces
+    elif len(parts) == 2:
+        return parts[0][0].upper() + parts[1][0].upper()  # First letter of provinces
+    elif len(parts) == 1:
         return parts[0][0].upper()  # Only one province part
-    return ''  # Empty province
+    return 'RDV'  # Empty province
 
 # Function to generate a random code with a random sequence of letters and numbers
-def generate_random_code(existing_codes, province, city_muni, con_number):
+def generate_random_code(existing_codes, province, con_number):
     while True:
         # Generate the components
         letters = random.choices(string.ascii_uppercase, k=3)
@@ -242,10 +255,15 @@ def generate_random_code(existing_codes, province, city_muni, con_number):
         code_components = letters + numbers
         random.shuffle(code_components)
         base_code = ''.join(code_components)
-        if city_muni == 'Davao City' or city_muni == 'DAVAO CITY' or city_muni == 'CITY OF DAVAO' or city_muni == 'City of Davao':
-            control_number = f"DC-{base_code}"
+        # if city_muni == 'Davao City' or city_muni == 'DAVAO CITY' or city_muni == 'CITY OF DAVAO' or city_muni == 'City of Davao':
+        #     control_number = f"DVO-{base_code}"
+        # else:
+        
+        if province == '' or province is None:
+            control_number = f"RDV-{base_code}"
         else:
             control_number = f"{province}-{base_code}"
+        
         # Ensure uniqueness
         if control_number not in existing_codes and control_number not in clean_list_df['control_number']:
             existing_codes.add(control_number)
@@ -259,30 +277,30 @@ def generate_random_code(existing_codes, province, city_muni, con_number):
 df = pd.read_excel(file_name)
 # df = pd.read_csv(file_name, encoding='latin1')
 
-if usertype == 'grievance_officer':
+if usertype != 'grievance_officer':
     # Check if the required column exists
     response = {}
 
-    if 'CONTROL NUMBER' not in df.columns:
+    if 'AMOUNT' not in df.columns:
         response = {
             "status": "error",
-            "message": f"Required column '{'CONTROL NUMBER'}' is missing in the uploaded file."
+            "message": f"Required column AMOUNT is missing in the uploaded file."
         }
 
         print(json.dumps(response))
 
-        raise ValueError(f"Required column '{'CONTROL NUMBER'}' is missing in the uploaded file.")
+        raise ValueError(f"Required column AMOUNT is missing in the uploaded file.")
         
     # Check for null values in the required column
-    if df['CONTROL NUMBER'].isnull().any():
+    if df['AMOUNT'].isnull().any():
         response = {
             "status": "error",
-            "message": f"Column '{'CONTROL NUMBER'}' contains null values. Please ensure all rows have values."
+            "message": "Column AMOUNT contains empty values. Please ensure all rows have values."
         }
 
         print(json.dumps(response))
         
-        raise ValueError(f"Column '{'CONTROL NUMBER'}' contains null values. Please ensure all rows have values.")
+        raise ValueError(f"Column AMOUNT contains empty values. Please ensure all rows have values.")
 
 df['File Source'] = request_file
 
@@ -301,9 +319,14 @@ df['Birthday'] = pd.to_datetime(df[['BIRTH DAY', 'BIRTH MONTH', 'BIRTH YEAR']].r
         columns={'BIRTH YEAR': 'year', 'BIRTH MONTH': 'month', 'BIRTH DAY': 'day'}
     ), errors='coerce')
 
-df_invalid = df[(df['LAST NAME'] == '') | (df['FIRST NAME'] == '') | (df['Birthday'] == '') | df['Birthday'].isnull() | ~(df['Birthday'].apply(is_valid_date))]
-df_valid = df[(df['LAST NAME'] != '') & (df['MIDDLE NAME'] != '') & (df['FIRST NAME'] != '') & (df['FIRST NAME'] != '') & (df['Birthday'] != '') & df['Birthday'].notnull() & df['Birthday'].apply(is_valid_date)]
-df_valid_no_mid = df[(df['LAST NAME'] != '') & (df['MIDDLE NAME'] == '') & (df['FIRST NAME'] != '') & (df['FIRST NAME'] != '') & (df['Birthday'] != '') & df['Birthday'].notnull() & df['Birthday'].apply(is_valid_date)]
+str_max_length = 50
+
+# Check if any string value exceeds the maximum length while ignoring non-string values
+exceeds_limit = df.drop(columns='File Source').map(lambda x: len(x) > str_max_length if isinstance(x, str) else False)
+
+df_invalid = df[(df['LAST NAME'] == '') | (df['FIRST NAME'] == '') | (df['Birthday'] == '') | df['Birthday'].isnull() | ~(df['Birthday'].apply(is_valid_date)) | exceeds_limit.any(axis=1)]
+df_valid = df[(df['LAST NAME'] != '') & (df['MIDDLE NAME'] != '') & (df['FIRST NAME'] != '') & (df['FIRST NAME'] != '') & (df['Birthday'] != '') & df['Birthday'].notnull() & df['Birthday'].apply(is_valid_date) & ~exceeds_limit.any(axis=1)]
+df_valid_no_mid = df[(df['LAST NAME'] != '') & (df['MIDDLE NAME'] == '') & (df['FIRST NAME'] != '') & (df['FIRST NAME'] != '') & (df['Birthday'] != '') & df['Birthday'].notnull() & df['Birthday'].apply(is_valid_date) & ~exceeds_limit.any(axis=1)]
  
 valid_recs = pd.concat([valid_recs, df_valid], ignore_index=True)
 valid_recs_no_mid = pd.concat([valid_recs_no_mid, df_valid_no_mid], ignore_index=True) 
@@ -677,7 +700,7 @@ for row, (index2, row2) in zip(valid_recs[['FIRST NAME', 'MIDDLE NAME', 'LAST NA
             cursor.execute(query, (row[9],))
             conn.commit()
 
-            save_clean_list(row2.to_dict(), row[9])
+            save_clean_list(row2.to_dict())
 
 valid_recs.drop(index=similar_index, inplace=True)
 
@@ -697,12 +720,14 @@ clean_df.astype(str)
 
 # Generate unique codes for each name
 existing_codes = set()
-clean_df['CONTROL NUMBER'] = [generate_random_code(existing_codes, get_initials(row['PROVINCE']), row['CITY/MUNICIPALITY'], row['CONTROL NUMBER']) for _, row in clean_df.iterrows()]
+clean_df['CONTROL NUMBER'] = [generate_random_code(existing_codes, poo, row['CONTROL NUMBER']) for _, row in clean_df.iterrows()]
 
 now = datetime.now().strftime("%m/%d/%Y")
 # print("\nTime finished: ", now)
 
 clean_df['Date Processed'] = now
+clean_df['Birthday'] = clean_df['Birthday'].str.replace(' ', '/')
+clean_list_df['Birthday'] = clean_list_df['Birthday'].str.replace(' ', '/')
 
 # Set index to start at 1
 clean_df.index = pd.RangeIndex(start=1, stop=len(clean_df) + 1)

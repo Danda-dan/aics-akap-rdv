@@ -22,6 +22,18 @@
                         {{ __('Import Served') }}
                     </x-nav-link>
                 </div>
+
+                <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
+                    <x-nav-link :href="route('no-show')" :active="request()->routeIs('no-show')">
+                        {{ __('No Show') }}
+                    </x-nav-link>
+                </div>
+
+                <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
+                    <x-nav-link :href="route('force-entry')" :active="request()->routeIs('force-entry')">
+                        {{ __('Force Entry') }}
+                    </x-nav-link>
+                </div>
             </div>
 
             <!-- Settings Dropdown -->

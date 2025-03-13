@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 use PhpOffice\PhpWord\TemplateProcessor;
 
@@ -24,6 +25,7 @@ class MultiStep extends Controller
 
         $program = $request->user()->program ? $request->user()->program->name : 'None';
         $usertype = $request->user()->usertype ? $request->user()->usertype : 'None';
+        $poo = $request->user()->poo ? $request->user()->poo : 'None';
         $position = $request->user()->position ? $request->user()->position->name : 'None';
         $division_chief = $request->user()->program ? $request->user()->program->division_chief : 'None';
 
@@ -62,10 +64,10 @@ class MultiStep extends Controller
             $request->session()->put('uploaded_request_file_name', $request->file('request')->getClientOriginalName());
         }
 
-        if ($step === "333") {
-            $request->session()->put('start_date', $request->input('start_date'));
-            $request->session()->put('end_date', $request->input('end_date'));
-        }
+        // if ($step === "333") {
+        //     $request->session()->put('start_date', $request->input('start_date'));
+        //     $request->session()->put('end_date', $request->input('end_date'));
+        // }
 
         // if ($step === "4" && $request->file('served')) {
         //     // Store the file temporarily
@@ -103,17 +105,31 @@ class MultiStep extends Controller
 
             set_time_limit(0); // Unlimited execution time
 
-            $output = shell_exec("python $scriptPath $request_name $request_file $program $usertype");
+            try {
+                $output = shell_exec("python $scriptPath $request_name $request_file $program $usertype $poo");
 
-            $data = json_decode($output, true);
+                if ($output === null) {
+                    Log::error("Python script execution failed.");
+                    // return back()->with('error', 'Python script execution failed.');
+                    return back()->with('error', 'Something went wrong.');
+                }
 
-            // Provide the document for download
-            // return response()->download($outputPath)->deleteFileAfterSend(true);
+                $data = json_decode($output, true);
 
-            if($data['status'] == 'error'){
-                return back()->with('error', $data['message']);
+                if (!$data || $data === null) {
+                    Log::error("Invalid JSON response from Python script: " . $output);
+                    // return back()->with('error', 'Invalid response from the Python script.');
+                    return back()->with('error', 'Invalid response from the Python script.');
+                }
+    
+                if(isset($data['status']) && $data['status'] == 'error'){
+                    // dd($data);
+                    return back()->with('error', $data['message']);
+                }
+            } catch (Exception $e) {
+                return response()->json(['error' => $e->getMessage()], 500);
             }
-
+            
             if ($data) {
                 $currentDateTime = date('m-d-Y His');
                 $fileName = "RDV Summary of Results {$currentDateTime}.docx";
@@ -161,45 +177,51 @@ class MultiStep extends Controller
         // dd(session()->all());
         
         if ($step === "4") {
-            if ($program == 'ECT') {
-                
-                DB::table('ect_requests')->insert([
-                    'stakeholder' => session('stakeholder'),
-                    'focal_person' => session('stakeholder'),
-                    'file_name' => session('uploaded_request_file_name'),
-                    'date_received' => date('Y-m-d'),
-                    'contact_person' => session('contact_person'),
-                    'contact_email' => session('contact_email'),
-                    'contact_number' => session('contact_number'),
-                    'raw_list' => $request->input('master_list'),
-                    'possible_duplicates' => $request->input('duplicate_list'),
-                    'invalid_records' => $request->input('invalid_list'),
-                    'served_individuals' => $request->input('served_list'),
-                    'total_valid' => $request->input('clean_list'),
-                    'prepared_by' => $request->user()->name,
-                    'division_chief' => $division_chief
-                ]);
-            }
+            try {
+                if ($program == 'ECT') {
+                    
+                    DB::table('ect_requests')->insert([
+                        'stakeholder' => session('stakeholder'),
+                        'focal_person' => session('focal_person'),
+                        'file_name' => session('uploaded_request_file_name'),
+                        'date_received' => date('Y-m-d'),
+                        'contact_person' => session('contact_person'),
+                        'contact_email' => session('contact_email'),
+                        'contact_number' => session('contact_number'),
+                        'raw_list' => $request->input('master_list'),
+                        'possible_duplicates' => $request->input('duplicate_list'),
+                        'invalid_records' => $request->input('invalid_list'),
+                        'served_individuals' => $request->input('served_list'),
+                        'total_valid' => $request->input('clean_list'),
+                        'prepared_by' => $request->user()->name,
+                        'division_chief' => $division_chief
+                    ]);
+                }
 
-            if ($program == 'AICS') {
-                
-                DB::table('aics_requests')->insert([
-                    'activity_title' => session('activity_title'),
-                    'stakeholder' => session('stakeholder'),
-                    'focal_person' => session('stakeholder'),
-                    'file_name' => session('uploaded_request_file_name'),
-                    'date_received' => date('Y-m-d'),
-                    'contact_person' => session('contact_person'),
-                    'contact_email' => session('contact_email'),
-                    'contact_number' => session('contact_number'),
-                    'raw_list' => $request->input('master_list'),
-                    'possible_duplicates' => $request->input('duplicate_list'),
-                    'invalid_records' => $request->input('invalid_list'),
-                    'served_individuals' => $request->input('served_list'),
-                    'total_valid' => $request->input('clean_list'),
-                    'prepared_by' => $request->user()->name,
-                    'division_chief' => $division_chief
-                ]);
+                if ($program == 'AICS') {
+                    
+                    DB::table('aics_requests')->insert([
+                        'activity_title' => session('activity_title'),
+                        'stakeholder' => NULL,
+                        'focal_person' => session('focal_person'),
+                        'file_name' => session('uploaded_request_file_name'),
+                        'date_received' => date('Y-m-d'),
+                        'contact_person' => session('contact_person'),
+                        'contact_email' => session('contact_email'),
+                        'contact_number' => session('contact_number'),
+                        'raw_list' => $request->input('master_list'),
+                        'possible_duplicates' => $request->input('duplicate_list'),
+                        'invalid_records' => $request->input('invalid_list'),
+                        'served_individuals' => $request->input('served_list'),
+                        'total_valid' => $request->input('clean_list'),
+                        'prepared_by' => $request->user()->name,
+                        'division_chief' => $division_chief
+                    ]);
+                }
+            } catch (\Exception $e) {
+                dd($e->getMessage());
+                DB::rollback();
+                return back()->with('error', 'Database error');
             }
         }
 
@@ -226,7 +248,7 @@ class MultiStep extends Controller
                 ];
             case 2:
                 return [
-                    'request' => $request->has('request') ? 'required|file|mimes:xlsx,xls,csv|max:2048' : 'nullable|file|mimes:xlsx,xls,csv|max:2048',
+                    'request' => $request->has('request') ? 'required|file|mimes:xlsx|max:2048' : 'nullable|file|mimes:xlsx|max:2048',
                 ];
             // case 2:
             //     return [

@@ -47,6 +47,21 @@
             @endif
         </div>
 
+        <!-- Sex Dropdown -->
+        <div class="mt-4">
+            <x-input-label for="poo" :value="__('Office')" />
+            <select id="poo" name="poo" class="mt-1 block w-full border-gray-300 rounded-md">
+                <option value="">SELECT OFFICE</option>
+                <option value="DVO" {{ old('poo', $user->poo) == 'DVO' ? 'selected' : '' }}>DAVAO CITY</option>
+                <option value="DDS" {{ old('poo', $user->poo) == 'DDS' ? 'selected' : '' }}>DAVAO DEL SUR</option>
+                <option value="DDN" {{ old('poo', $user->poo) == 'DDN' ? 'selected' : '' }}>DAVAO DEL NORTE</option>
+                <option value="DOR" {{ old('poo', $user->poo) == 'DOR' ? 'selected' : '' }}>DAVAO ORIENTAL</option>
+                <option value="DOC" {{ old('poo', $user->poo) == 'DOC' ? 'selected' : '' }}>DAVAO OCCIDENTAL</option>
+                <option value="DDO" {{ old('poo', $user->poo) == 'DDO' ? 'selected' : '' }}>DAVAO DE ORO</option>
+            </select>
+            <x-input-error class="mt-2" :messages="$errors->get('poo')" />
+        </div>
+
         <div class="flex items-center gap-4">
             <x-primary-button>{{ __('Save') }}</x-primary-button>
 

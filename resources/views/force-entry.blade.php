@@ -1,7 +1,7 @@
 <x-app-layout>
     <x-slot name="header">
         <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-            {{ __('Import') }}
+            {{ __('Force Entry Upload') }}
         </h2>
     </x-slot>
 
@@ -10,22 +10,17 @@
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
                 <div class="p-6 text-gray-900">
                     <div class="w-full max-w-2xl mx-auto mt-10">
-                        <form method="POST" action="{{ route('form.import') }}" enctype="multipart/form-data">
+                        <form method="POST" action="{{ route('upload.csv') }}" enctype="multipart/form-data">
                             @csrf
 
                             <input type="hidden" name="current_step" value="sample">
 
                             <div class="max-w-2xl mx-auto p-6 bg-white shadow-md rounded-md">
-                                <h2 class="text-xl font-bold mb-4">Import Served Database File</h2>
+                                <h2 class="text-xl font-bold mb-4">Import Force Entry</h2>
 
-                                <input type="file" name="served" id="served" class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm mb-4 w-full">
+                                <input type="file" name="force_entry" id="force_entry" class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm mb-4 w-full">
                             
-                                @error('served') <span class="text-red-500 text-sm mb-4">{{ $message }}</span> @enderror
-
-                                <!-- @if(session('uploaded_served_file_name'))
-                                    <p class="mt-2">Uploaded File: {{ session('uploaded_served_file_name') }}</p>
-                                    <p class="text-gray-500">You can upload a new file if you wish to replace this one.</p>
-                                @endif -->
+                                @error('force_entry') <span class="text-red-500 text-sm mb-4">{{ $message }}</span> @enderror
                             </div>
 
                             <!-- Navigation Buttons -->

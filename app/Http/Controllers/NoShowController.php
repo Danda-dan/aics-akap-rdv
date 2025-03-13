@@ -6,36 +6,34 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Log;
 
-class ImportServed extends Controller
+class NoShowController extends Controller
 {
-    public function importForm(Request $request)
+    public function importFile(Request $request)
     {
 
         $request->validate([
-            'served' => 'required|file|mimes:csv|max:51200', // Max size 50MB
+            'noShow' => 'required|file|mimes:csv|max:51200', // Max size 50MB
         ]);
-        
-        $program = $request->user()->program ? $request->user()->program->name : 'None';
 
         // dd($request);
-        if ($request->hasFile('served')) {
-            $file = $request->file('served');
+        if ($request->hasFile('noShow')) {
+            $file = $request->file('noShow');
             $filePath = $file->store('temp');
 
-            $request->session()->put('uploaded_served_file_path', $filePath);
-            $request->session()->put('uploaded_served_file_name', $file->getClientOriginalName());
+            $request->session()->put('uploaded_no_show_file_path', $filePath);
+            $request->session()->put('uploaded_no_show_file_name', $file->getClientOriginalName());
 
-            // dd(session('uploaded_served_file_name'));
+            // dd(session('uploaded_no_show_file_name'));
 
-            $request_name = escapeshellarg(session('uploaded_served_file_name'));
-            $request_file = escapeshellarg(session('uploaded_served_file_path'));
+            $request_name = escapeshellarg(session('uploaded_no_show_file_name'));
+            $request_file = escapeshellarg(session('uploaded_no_show_file_path'));
             
-            $scriptPath = base_path('storage/scripts/import_served_database.py');
+            $scriptPath = base_path('storage/scripts/remove_no_show.py');
 
             set_time_limit(0); // Unlimited execution time
-
-            try{
-                $output = shell_exec("python $scriptPath $request_name $request_file $program");
+            
+            try {
+                $output = shell_exec("python $scriptPath $request_name $request_file");
 
                 if ($output === null) {
                     Log::error("Python script execution failed.");
@@ -50,21 +48,20 @@ class ImportServed extends Controller
                     // return back()->with('error', 'Invalid response from the Python script.');
                     return redirect()->back()->with('error', 'Something went wrong.');
                 }
-    
+
                 // dd($data);
                 $this->clearTemporaryFile();
                 
                 if(isset($data['message']) && $data["message"]){
                     // Return a success response
-                    return redirect()->route('import-served')->with('success', 'Data saved successfully!');
+                    return redirect()->route('no-show')->with('success', 'No Show Clients removed from the clean list successfully!');
                 } else {
                     // Return an error response
-                    return back()->with('error', 'Something went wrong.');
+                    return back()->with('error', 'An error occurred.');
                 }
-            } catch (Exception $e) {
-                return response()->json(['error' => $e->getMessage()], 500);
+            } catch (\Exception $e) {
+                return back()->with('error', 'An error occurred.');
             }
-            
         } else {
             // Return an error response
             return back()->with('error', 'An error occurred.');
@@ -87,8 +84,8 @@ class ImportServed extends Controller
         
         session()->forget(
             [
-                'uploaded_served_file_path', 
-                'uploaded_served_file_name',
+                'uploaded_no_show_file_path', 
+                'uploaded_no_show_file_name',
                 // 'start_date', 
                 // 'end_date',
                 'activity_title',

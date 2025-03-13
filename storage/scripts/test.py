@@ -41,13 +41,13 @@ bday_ratio = fuzz.ratio('21/04/1988', '21/04/1987')
 # print('Avg Ratio: ', avg_ratio)
 # print('Extract one: ', extract)
 
-result = {
-    "bday_ratio": bday_ratio,
-    "fullname_ratio": fullname_ratio,
-    "fullname_token_sort_ratio": fullname_token_sort_ratio
-}
+# result = {
+#     "bday_ratio": bday_ratio,
+#     "fullname_ratio": fullname_ratio,
+#     "fullname_token_sort_ratio": fullname_token_sort_ratio
+# }
 
-print(json.dumps(result))
+# print(json.dumps(result))
 
 # query = 'JOSIE ESGANA DIZON'
 # choices = ['JOSIE DIZON ESGANA', 'JOSIE E DIZON', 'JESIE ESGANA DIZON', 'JOSIE ESGANA DISON', 'JUAN ESGANA DIZON']  
@@ -70,4 +70,44 @@ print(json.dumps(result))
 # print(fn_ratio)
 # print(mn_ratio)
 # print(ln_ratio)
+
+# Sample DataFrame
+data = {
+    'Name': ['Alice', 'Bob', 'Charlotte', 'David'],
+    'City': ['New York', 'LA', 'San Francisco', 'Chicago'],
+    'Country': ['USA', 'USA', 'United States', 'USA']
+}
+
+df = pd.DataFrame(data)
+
+# Set the maximum allowed length
+max_length = 10
+
+# Check if any value exceeds the maximum length
+exceeds_limit = df.map(lambda x: len(x) > max_length)
+
+# Print rows where any column exceeds the limit
+rows_exceeding = df[exceeds_limit.any(axis=1)]
+
+# print("Rows with values exceeding max length:")
+# print(rows_exceeding)
+
+leng = len('Record verification for Initial RDV Test File.xlsx')
+# print('length: ', leng)
+
+province = 'DAVAO OCCIDENTAL/111000032729'
+parts = province.split()
+print(parts)
+print(len(parts))
+
+if len(parts) == 3:
+    print(parts[0])
+    print(parts[1])
+    print(parts[2])
+    print(parts[0][0].upper() + parts[1][0].upper() + parts[2][0].upper())   # First letter of provinces
+elif len(parts) == 2:
+    print(parts[0][0].upper() + parts[1][0].upper())   # First letter of provinces
+elif len(parts) == 1:
+    print(parts[0][0].upper())   # Only one province part
+
 

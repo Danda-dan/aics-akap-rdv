@@ -40,7 +40,7 @@
             line-height: 1.6;
         }
         .login-btn {
-            background-color: #ff66b2; /* Light pink button */
+            background-color: #4A36FE; /* Light pink button */
             color: #fff;
             padding: 0.8rem 1.5rem;
             font-size: 1rem;
@@ -51,14 +51,14 @@
             transition: background-color 0.3s, color 0.3s;
         }
         .login-btn:hover {
-            background-color: #e05599; /* Darker pink for hover */
+            background-color: #2201FF; /* Darker pink for hover */
             color: #fff;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>Welcome to Record Data Verification System</h1>
+        <h1>Welcome to Record Duplicate Verification System</h1>
         <p>Your hub for verifying list of data efficiently. Sign in to access all features and ensure seamless operations.</p>
         <a href="{{ route('login') }}">
             <button class="login-btn">Login</button>

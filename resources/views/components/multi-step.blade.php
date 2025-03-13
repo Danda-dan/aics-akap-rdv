@@ -241,10 +241,38 @@
             </div>
         </div>
 
-        @if (session('error'))
+        <!-- @if (session('error'))
             <div class="alert alert-danger text-2xl mt-5">
                 {{ session('error') }}
             </div>
-        @endif
+        @endif -->
+        <div x-data="{ show: false, message: '', type: 'success' }"
+            x-show="show"
+            x-init="
+                @if (session('success'))
+                    show = true;
+                    message = '{{ session('success') }}';
+                    type = 'success';
+                    setTimeout(() => show = false, 8000);
+                @elseif (session('error'))
+                    show = true;
+                    message = '{{ session('error') }}';
+                    type = 'error';
+                    setTimeout(() => show = false, 8000);
+                @endif
+            "
+            class="fixed inset-0 flex items-center justify-center text-black px-4 py-3 rounded-lg shadow-lg max-w-sm w-full mx-auto">
+            <div class="flex items-center bg-white border border-gray-300 rounded-lg p-4 shadow-lg">
+                <svg x-show="type === 'success'" class="w-6 h-6 mr-2 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M5 13l4 4L19 7"></path>
+                </svg>
+                <svg x-show="type === 'error'" class="w-6 h-6 mr-2 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+                <span class="text-black font-semibold" x-text="message"></span>
+            </div>
+        </div>
     </form>
 </div>

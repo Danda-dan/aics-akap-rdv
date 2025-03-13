@@ -31,7 +31,7 @@ password = 'davor2024'
 # print("\nimporting excel file...")
 request_file = "../storage/app/private/" + request_file
 
-df = pd.read_excel(request_file)
+df = pd.read_csv(request_file, encoding='latin1')
 
 df = df.fillna('')
 
@@ -69,6 +69,11 @@ for index, row in df.iterrows():
     # if pd.isnull(values):
     #     print('null: ', row)
     # Construct the INSERT query dynamically
+
+    if row['CONTROL NUMBER'] != '' and row['CONTROL NUMBER'] is not None:
+        query = "DELETE FROM aics_clean_list WHERE control_number = %s"
+        cur.execute(query, (row['CONTROL NUMBER'],))
+        conn.commit()
 
     query = "INSERT INTO aics_served_database ({}) VALUES ({})".format(
             ', '.join(column_mapping.values()),
