@@ -202,7 +202,7 @@ class MultiStep extends Controller
                     
                     DB::table('aics_requests')->insert([
                         'activity_title' => session('activity_title'),
-                        'stakeholder' => NULL,
+                        'stakeholder' => session('stakeholder'),
                         'focal_person' => session('focal_person'),
                         'file_name' => session('uploaded_request_file_name'),
                         'date_received' => date('Y-m-d'),

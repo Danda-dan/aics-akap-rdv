@@ -2,6 +2,7 @@ from rapidfuzz import process, fuzz
 import os
 import pandas as pd
 import json
+from dateutil import parser
 
 # database_folder_path = 'data/served'
 # database_file = 'conso_served.xlsx'
@@ -96,18 +97,21 @@ leng = len('Record verification for Initial RDV Test File.xlsx')
 # print('length: ', leng)
 
 province = 'DAVAO OCCIDENTAL/111000032729'
-parts = province.split()
-print(parts)
-print(len(parts))
+# parts = province.split()
+# print(parts)
+# print(len(parts))
 
-if len(parts) == 3:
-    print(parts[0])
-    print(parts[1])
-    print(parts[2])
-    print(parts[0][0].upper() + parts[1][0].upper() + parts[2][0].upper())   # First letter of provinces
-elif len(parts) == 2:
-    print(parts[0][0].upper() + parts[1][0].upper())   # First letter of provinces
-elif len(parts) == 1:
-    print(parts[0][0].upper())   # Only one province part
+# if len(parts) == 3:
+#     print(parts[0])
+#     print(parts[1])
+#     print(parts[2])
+#     print(parts[0][0].upper() + parts[1][0].upper() + parts[2][0].upper())   # First letter of provinces
+# elif len(parts) == 2:
+#     print(parts[0][0].upper() + parts[1][0].upper())   # First letter of provinces
+# elif len(parts) == 1:
+#     print(parts[0][0].upper())   # Only one province part
 
+date_served = '03/05/2025 01:13:09'
+selected_date = parser.parse(date_served).date()
 
+print(selected_date)

@@ -21,8 +21,8 @@ class DatabaseSeeder extends Seeder
             'program_id' => 1,
             'position_id' => 1,
             'usertype' => '',
-            'name' => 'ECT User',
-            'email' => 'ect@user.com',
+            'name' => 'AICS User',
+            'email' => 'aics@user.com',
             'password' => Hash::make('password'),
             'remember_token' => Str::random(60),
         ]);

@@ -127,6 +127,8 @@ clean_list_df['Birthday'] = pd.to_datetime(clean_list_df[['birth_day', 'birth_mo
 
 clean_list_df['Birthday'] = clean_list_df['Birthday'].dt.strftime('%d %m %Y')
 
+# clean_list_df['Birthday'] = clean_list_df['birth_day'] + ' ' + clean_list_df['birth_month'] + ' ' + clean_list_df['birth_year']
+
 db_df = pd.DataFrame(served_db, columns=served_db_columns)
 db_df = db_df.astype(str)
 
@@ -140,11 +142,13 @@ db_df['Full Name'] = db_df['Full Name'].apply(lambda x: replace_multiple(x, repl
 db_df['Full Name 2'] = db_df['Full Name 2'].apply(lambda x: replace_multiple(x, replacements))
 db_df['Full Name 3'] = db_df['Full Name 3'].apply(lambda x: replace_multiple(x, replacements))
 
-db_df['Birthday'] = pd.to_datetime(db_df[['birth_day', 'birth_month', 'birth_year']].rename(
-        columns={'birth_year': 'year', 'birth_month': 'month', 'birth_day': 'day'}
-    ), errors='coerce')
+# db_df['Birthday'] = pd.to_datetime(db_df[['birth_day', 'birth_month', 'birth_year']].rename(
+#         columns={'birth_year': 'year', 'birth_month': 'month', 'birth_day': 'day'}
+#     ), errors='coerce')
 
-db_df['Birthday'] = db_df['Birthday'].dt.strftime('%d %m %Y')
+# db_df['Birthday'] = db_df['Birthday'].dt.strftime('%d %m %Y')
+
+db_df['Birthday'] = db_df['birth_day'] + ' ' + db_df['birth_month'] + ' ' + db_df['birth_year']
 
 # columns_to_retain = ["FIRST NAME", "MIDDLE NAME", "LAST NAME", "EXTENSION NAME", "BIRTHDAY", "CITY/MUNICIPALITY", "BARANGAY"]
 
@@ -246,7 +250,7 @@ def get_initials(province):
     return 'RDV'  # Empty province
 
 # Function to generate a random code with a random sequence of letters and numbers
-def generate_random_code(existing_codes, province, con_number):
+def generate_random_code(existing_codes, province):
     while True:
         # Generate the components
         letters = random.choices(string.ascii_uppercase, k=3)
@@ -269,8 +273,8 @@ def generate_random_code(existing_codes, province, con_number):
             existing_codes.add(control_number)
             if usertype != 'grievance_officer':
                 return control_number
-            if con_number != '' or con_number is not None:
-                return con_number
+            # if con_number != '' or con_number is not None:
+            #     return con_number
 
 
 # Load the Excel file into a DataFrame and store it in the dictionary
@@ -433,6 +437,7 @@ valid_recs = valid_recs.reset_index(drop=True)
 matches = []
 fullname_matches = []
 clean_list_matches = []
+token_matching = []
 
 def clean_match(index, name):
     remarks = 'Possible Match'
@@ -461,7 +466,7 @@ def clean_match(index, name):
                     'Name on request': name[0] + ' ' + name[1] + ' ' + name[2] + ' ' + name[3],
                     'File source 1': name[7],
                     'On matching': clean_list_df.iloc[df_index]['first_name'] + ' ' + clean_list_df.iloc[df_index]['middle_name'] + ' ' + clean_list_df.iloc[df_index]['last_name'] + ' ' + clean_list_df.iloc[df_index]['extension_name'],
-                    'File source 2': 'Clean List',
+                    'File source 2': 'Clean List' + ' - ' + clean_list_df.iloc[df_index]['file_source'],
                     'Remarks': remarks
                 })
                 similar_index.append(index)
@@ -491,7 +496,7 @@ def clean_match(index, name):
                     'Name on request': name[0] + ' ' + name[2] + ' ' + name[3],
                     'File source 1': name[7],
                     'On matching': clean_list_df.iloc[df_index]['first_name'] + ' ' + clean_list_df.iloc[df_index]['middle_name'] + ' ' + clean_list_df.iloc[df_index]['last_name'] + ' ' + clean_list_df.iloc[df_index]['extension_name'],
-                    'File source 2': 'Clean List',
+                    'File source 2': 'Clean List' + ' - ' + clean_list_df.iloc[df_index]['file_source'],
                     'Remarks': remarks
                 })
                 similar_index.append(index)
@@ -521,7 +526,7 @@ def clean_match(index, name):
                     'Name on request': name[0] + ' ' + name[2] + ' ' + name[3],
                     'File source 1': name[7],
                     'On matching': clean_list_df.iloc[df_index]['first_name'] + ' ' + clean_list_df.iloc[df_index]['middle_name'] + ' ' + clean_list_df.iloc[df_index]['last_name'] + ' ' + clean_list_df.iloc[df_index]['extension_name'],
-                    'File source 2': 'Clean List',
+                    'File source 2': 'Clean List' + ' - ' + clean_list_df.iloc[df_index]['file_source'],
                     'Remarks': remarks
                 })
                 similar_index.append(index)
@@ -677,30 +682,30 @@ def token_sort_match(name):
 
 index = -1
 
-token_matching = []
-
-for row, (index2, row2) in zip(valid_recs[['FIRST NAME', 'MIDDLE NAME', 'LAST NAME', 'EXTENSION NAME', 'Full Name', 'Full Name 2', 'Full Name 3', 'File Source', 'Birthday', 'CONTROL NUMBER', 'BIRTH DAY', 'BIRTH MONTH', 'BIRTH YEAR']].to_numpy(), valid_recs.iterrows()):
+for row, (index2, row2) in zip(valid_recs[['FIRST NAME', 'MIDDLE NAME', 'LAST NAME', 'EXTENSION NAME', 'Full Name', 'Full Name 2', 'Full Name 3', 'File Source', 'Birthday', 'BIRTH DAY', 'BIRTH MONTH', 'BIRTH YEAR']].to_numpy(), valid_recs.iterrows()):
     index += 1
     # print(index, row)
     # if not clean_list_df.empty:
     #         clean_match(index, row)
             
     if usertype != 'grievance_officer':
+        token_sort_match(row)
+
         if not clean_list_df.empty:
             clean_match(index, row)
-        token_sort_match(row)
-    else:
-        match = token_sort_match(row)
+        
+    # else:
+    #     match = token_sort_match(row)
 
-        if not match:
-            query = """
-            DELETE FROM aics_clean_list WHERE control_number = %s;
-            """
+    #     if not match:
+    #         query = """
+    #         DELETE FROM aics_clean_list WHERE control_number = %s;
+    #         """
 
-            cursor.execute(query, (row[9],))
-            conn.commit()
+    #         cursor.execute(query, (row[9],))
+    #         conn.commit()
 
-            save_clean_list(row2.to_dict())
+    #         save_clean_list(row2.to_dict())
 
 valid_recs.drop(index=similar_index, inplace=True)
 
@@ -720,7 +725,7 @@ clean_df.astype(str)
 
 # Generate unique codes for each name
 existing_codes = set()
-clean_df['CONTROL NUMBER'] = [generate_random_code(existing_codes, poo, row['CONTROL NUMBER']) for _, row in clean_df.iterrows()]
+clean_df['CONTROL NUMBER'] = [generate_random_code(existing_codes, poo) for _, row in clean_df.iterrows()]
 
 now = datetime.now().strftime("%m/%d/%Y")
 # print("\nTime finished: ", now)
@@ -765,7 +770,7 @@ if not os.path.exists(documents_path):
     os.makedirs(documents_path)
 
 clean_df['MONTHLY SALARY'] = clean_df['MONTHLY SALARY'].replace(['', None], 0)
-clean_df.drop(columns=['S/N', 'Full Name', 'Full Name 2', 'Full Name 3'], inplace=True)
+clean_df.drop(columns=['Full Name', 'Full Name 2', 'Full Name 3'], inplace=True)
 
 for item in file_sources:
     master_df_file = master_list[master_list['File Source'] == item] if not master_list.empty else master_list

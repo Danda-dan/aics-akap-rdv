@@ -232,7 +232,7 @@
             <div class="bg-white p-6 rounded shadow-lg text-center">
                 <p class="text-lg font-semibold text-gray-700">Processing your request, please wait...</p>
                 <!-- Optional spinner -->
-                <div class="mt-4">
+                <div class="mt-4 ml-6">
                     <svg class="animate-spin h-6 w-6 text-blue-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                         <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                         <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
@@ -253,12 +253,12 @@
                     show = true;
                     message = '{{ session('success') }}';
                     type = 'success';
-                    setTimeout(() => show = false, 8000);
+                    setTimeout(() => show = false, 3000);
                 @elseif (session('error'))
                     show = true;
                     message = '{{ session('error') }}';
                     type = 'error';
-                    setTimeout(() => show = false, 8000);
+                    setTimeout(() => show = false, 3000);
                 @endif
             "
             class="fixed inset-0 flex items-center justify-center text-black px-4 py-3 rounded-lg shadow-lg max-w-sm w-full mx-auto">
