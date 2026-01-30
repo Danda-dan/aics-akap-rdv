@@ -3,6 +3,11 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\DB;
+
+use PhpOffice\PhpWord\TemplateProcessor;
 
 class ForceEntryController extends Controller
 {
@@ -13,6 +18,13 @@ class ForceEntryController extends Controller
             'force_entry' => 'required|file|mimes:csv|max:51200', // Max size 50MB
         ]);
 
+        $name = $request->user()->name ? $request->user()->name : 'None';
+        $program = $request->user()->program ? $request->user()->program->name : 'None';
+        $user_type = $request->user()->user_type ? $request->user()->user_type : 'None';
+        $poo = $request->user()->poo ? $request->user()->poo : 'None';
+        $position = $request->user()->position ? $request->user()->position->name : 'None';
+        $division_chief = $request->user()->program ? $request->user()->program->division_chief : 'None';
+
         // dd($request);
         if ($request->hasFile('force_entry')) {
             $file = $request->file('force_entry');
@@ -21,17 +33,38 @@ class ForceEntryController extends Controller
             $request->session()->put('uploaded_force_entry_file_path', $filePath);
             $request->session()->put('uploaded_force_entry_file_name', $file->getClientOriginalName());
 
-            // dd(session('uploaded_force_entry_file_name'));
+            $current_date = date('M-d-Y');
+
+            // Path to your template
+            $templatePath = public_path('templates\Reporting Template.docx');
+
+            // Create a new TemplateProcessor instance
+            $templateProcessor = new TemplateProcessor($templatePath);
+            $templateProcessor->setValue('stakeholder', session('stakeholder'));
+            $templateProcessor->setValue('focal_person', session('focal_person'));
+            $templateProcessor->setValue('file_name', session('uploaded_request_file_name'));
+            $templateProcessor->setValue('date_received', $current_date);
+            $templateProcessor->setValue('contact_person', session('contact_person'));
+            $templateProcessor->setValue('contact_email', session('contact_email'));
+            $templateProcessor->setValue('contact_number', session('contact_number'));
+            $templateProcessor->setValue('prepared_by', $request->user()->name);
+            $templateProcessor->setValue('position', $position);
+            $templateProcessor->setValue('division_chief', $division_chief);
+
+            $name = escapeshellarg($name);
 
             $request_name = escapeshellarg(session('uploaded_force_entry_file_name'));
             $request_file = escapeshellarg(session('uploaded_force_entry_file_path'));
             
-            $scriptPath = base_path('storage/scripts/remove_no_show.py');
+            $script_path = base_path('storage/scripts/fuzzy_match.py');
+            $documentsPath = rtrim(getenv('USERPROFILE') ?: getenv('HOME'), DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . 'Documents';
 
             set_time_limit(0); // Unlimited execution time
             
             try {
-                $output = shell_exec("python $scriptPath $request_name $request_file");
+                // $output = shell_exec("python $scriptPath $request_name $request_file");
+                $file = "FORCE_ENTRY";
+                $output = shell_exec("python $script_path $request_name $request_file $program $user_type $poo $documentsPath $file $name");
 
                 if ($output === null) {
                     Log::error("Python script execution failed.");
@@ -47,18 +80,42 @@ class ForceEntryController extends Controller
                     return redirect()->back()->with('error', 'Something went wrong.');
                 }
 
-                // dd($data);
-                $this->clearTemporaryFile();
-                
-                if(isset($data['message']) && $data["message"]){
-                    // Return a success response
-                    return redirect()->route('no-show')->with('success', 'No Show Clients removed from the clean list successfully!');
-                } else {
-                    // Return an error response
-                    return back()->with('error', 'An error occurred.');
+                if(isset($data['status']) && $data['status'] == 'error'){
+                    // dd($data);
+                    return redirect()->back()->with('error', $data['message']);
                 }
-            } catch (\Exception $e) {
-                return back()->with('error', 'An error occurred.');
+            } catch (Exception $e) {
+                return response()->json(['error' => $e->getMessage()], 500);
+            }
+
+            if ($data) {
+                $currentDateTime = date('m-d-Y His');
+                $fileName = "RDV Summary of Results {$currentDateTime}.docx";
+                
+                $total = $data['duplicate_list'] + $data['invalid_list'] + $data['served_list'];
+                $templateProcessor->setValue('possible_duplicates', $data['duplicate_list'] > 0 ? $data['duplicate_list'] : 'None');
+                $templateProcessor->setValue('invalid_records', $data['invalid_list'] > 0 ? $data['invalid_list'] : 'None');
+                $templateProcessor->setValue('served_individuals', $data['served_list'] > 0 ? $data['served_list'] : 'None');
+                $templateProcessor->setValue('total_valid', $data['clean_list'] > 0 ? $data['clean_list'] : 'None');
+                $templateProcessor->setValue('overall_total', $total > 0 ? $total : 'None');
+
+                $request->session()->put('master_list', $data['master_list']);
+                $request->session()->put('clean_list', $data['clean_list']);
+                $request->session()->put('invalid_list', $data['invalid_list']);
+                $request->session()->put('duplicate_list', $data['duplicate_list']);
+                $request->session()->put('served_list', $data['served_list']);
+
+                // Output file path in the Documents folder
+                $outputPath = $documentsPath . DIRECTORY_SEPARATOR . $fileName;
+
+                // Save the file
+                $templateProcessor->saveAs($outputPath);
+
+                $this->clearTemporaryFile();
+
+                return redirect()->back()->with('success', 'Done importing force entry data.');
+            } else {
+                return redirect()->back()->with('error', 'Something went wrong.');
             }
         } else {
             // Return an error response

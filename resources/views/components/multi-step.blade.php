@@ -14,7 +14,8 @@
     </div>
 
     <!-- Form Steps -->
-    <form x-data="{ isLoading: false, onStep: 3 }" x-on:submit="if (step === onStep) { isLoading = true }"
+    <form x-data="{ isLoading: false, onStep: 3 }" x-init="$watch('isLoading', value => window.scriptRunning = value)" 
+        x-on:submit="if (step === onStep) { isLoading = true }"
         method="POST" action="{{ route('form.submit') }}" enctype="multipart/form-data">
         @csrf
 
@@ -43,7 +44,7 @@
                 class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm mb-4 w-full" :required="step === 1">
             @error('contact_email') <span class="text-red-500 text-sm mb-4">{{ $message }}</span> @enderror
 
-            <input type="text" name="contact_number" value="{{ old('contact_number') }}" placeholder="Enter Contact Number" 
+            <input type="text" name="contact_number" value="{{ old('contact_number') }}" placeholder="Enter Contact Number. Ex: 09123456789" 
                 class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm mb-4 w-full" :required="step === 1">
             @error('contact_number') <span class="text-red-500 text-sm mb-4">{{ $message }}</span> @enderror
         </div>
@@ -192,8 +193,8 @@
                         @endif
                         <p class="text-gray-600 mb-2"><span class="font-semibold">Raw List:</span> {{ session('master_list') }} </p>
                         <p class="text-gray-600 mb-2"><span class="font-semibold">Clean List:</span> {{ session('clean_list') }} </p>
-                        <p class="text-gray-600 mb-2"><span class="font-semibold">Possible Served:</span> {{ session('served_list') }} </p>
-                        <p class="text-gray-600 mb-2"><span class="font-semibold">Possible Duplicate:</span> {{ session('duplicate_list') }} </p>
+                        <p class="text-gray-600 mb-2"><span class="font-semibold">Identified Served:</span> {{ session('served_list') }} </p>
+                        <p class="text-gray-600 mb-2"><span class="font-semibold">Identified Duplicate:</span> {{ session('duplicate_list') }} </p>
                         <p class="text-gray-600"><span class="font-semibold">Invalid:</span> {{ session('invalid_list') }} </p>
                     </div>
                 </div>
@@ -218,7 +219,7 @@
             </button>
             
             <button type="submit" x-show="step === maxSteps"
-                class="px-4 py-2 bg-green-500 text-white rounded">Done
+                class="px-4 py-2 bg-green-500 text-white rounded">Save
             </button>
         </div>
 
@@ -232,7 +233,7 @@
             <div class="bg-white p-6 rounded shadow-lg text-center">
                 <p class="text-lg font-semibold text-gray-700">Processing your request, please wait...</p>
                 <!-- Optional spinner -->
-                <div class="mt-4 ml-6">
+                <div class="mt-4 flex justify-center">
                     <svg class="animate-spin h-6 w-6 text-blue-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                         <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                         <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
@@ -240,6 +241,7 @@
                 </div>
             </div>
         </div>
+
 
         <!-- @if (session('error'))
             <div class="alert alert-danger text-2xl mt-5">
@@ -261,7 +263,7 @@
                     setTimeout(() => show = false, 3000);
                 @endif
             "
-            class="fixed inset-0 flex items-center justify-center text-black px-4 py-3 rounded-lg shadow-lg max-w-sm w-full mx-auto">
+            class="fixed inset-0 flex items-center justify-center text-black px-4 py-3 rounded-lg max-w-sm w-full mx-auto">
             <div class="flex items-center bg-white border border-gray-300 rounded-lg p-4 shadow-lg">
                 <svg x-show="type === 'success'" class="w-6 h-6 mr-2 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -276,3 +278,60 @@
         </div>
     </form>
 </div>
+<script>
+    // Global variable to track deduplication status
+    window.scriptRunning = false;
+    
+    let count = 0;
+    // Listen for page reload
+    window.addEventListener('beforeunload', function (e) {
+        if (window.scriptRunning && count > 0) {
+            e.preventDefault();
+            e.returnValue = 'A script is still running. Are you sure you want to leave?';
+
+            // Attempt to stop the Python script
+            // navigator.sendBeacon('/stop-deduplication');
+            // fetch('/stop-deduplication', {
+            //     method: 'POST',
+            //     headers: {
+            //         'Content-Type': 'application/json',
+            //         'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+            //     },
+            //     body: JSON.stringify({}),
+            //     keepalive: true
+            // });
+        } else {
+            // Reset the count if no script is running
+            count++;
+        }
+    });
+
+    // let pollingInterval = null;
+
+    // function checkStatus() {
+    //     fetch("{{ route('dedup.status') }}")
+    //         .then(response => response.json())
+    //         .then(data => {
+    //             if (data.status === 'done') {
+    //                 clearInterval(pollingInterval); // stop checking
+    //                 console.log('Process complete:', data);
+
+    //                 // You can now update the UI or redirect the user
+    //                 document.getElementById("status-message").innerText = "Deduplication completed!";
+    //                 // Optionally reload or fetch more data
+    //             } else {
+    //                 console.log('Still processing...');
+    //             }
+    //         })
+    //         .catch(error => {
+    //             console.error("Error checking status:", error);
+    //         });
+    // }
+
+    // Start polling every 3 seconds
+    // document.addEventListener('DOMContentLoaded', function () {
+    //     if (window.scriptRunning) {
+    //         pollingInterval = setInterval(checkStatus, 3000);
+    //     }
+    // });
+</script>

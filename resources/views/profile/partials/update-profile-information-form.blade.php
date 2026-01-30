@@ -47,7 +47,7 @@
             @endif
         </div>
 
-        <!-- Sex Dropdown -->
+        <!-- POO Dropdown -->
         <div class="mt-4">
             <x-input-label for="poo" :value="__('Office')" />
             <select id="poo" name="poo" class="mt-1 block w-full border-gray-300 rounded-md">

@@ -10,6 +10,8 @@ use Illuminate\Support\Facades\Log;
 
 use PhpOffice\PhpWord\TemplateProcessor;
 
+use Symfony\Component\Process\Process;
+
 use App\Models\User;
 
 class MultiStep extends Controller
@@ -23,8 +25,9 @@ class MultiStep extends Controller
         $step = $request->input('current_step');
         $rules = $this->getValidationRulesForStep($request, $step);
 
+        $name = $request->user()->name ? $request->user()->name : 'None';
         $program = $request->user()->program ? $request->user()->program->name : 'None';
-        $usertype = $request->user()->usertype ? $request->user()->usertype : 'None';
+        $user_type = $request->user()->user_type ? $request->user()->user_type : 'None';
         $poo = $request->user()->poo ? $request->user()->poo : 'None';
         $position = $request->user()->position ? $request->user()->position->name : 'None';
         $division_chief = $request->user()->program ? $request->user()->program->division_chief : 'None';
@@ -64,18 +67,6 @@ class MultiStep extends Controller
             $request->session()->put('uploaded_request_file_name', $request->file('request')->getClientOriginalName());
         }
 
-        // if ($step === "333") {
-        //     $request->session()->put('start_date', $request->input('start_date'));
-        //     $request->session()->put('end_date', $request->input('end_date'));
-        // }
-
-        // if ($step === "4" && $request->file('served')) {
-        //     // Store the file temporarily
-        //     $path = $request->file('served')->store('temp');
-        //     $request->session()->put('uploaded_served_file_path', $path);
-        //     $request->session()->put('uploaded_served_file_name', $request->file('served')->getClientOriginalName());
-        // }
-
         if ($step === "3") {
             // dd($request->user()->program->name);
             $current_date = date('M-d-Y');
@@ -96,17 +87,58 @@ class MultiStep extends Controller
             $templateProcessor->setValue('position', $position);
             $templateProcessor->setValue('division_chief', $division_chief);
 
+            $name = escapeshellarg($name);
+
             $request_name = escapeshellarg(session('uploaded_request_file_name'));
             $request_file = escapeshellarg(session('uploaded_request_file_path'));
-            // $start_date = escapeshellarg(session('start_date'));
-            // $end_date = escapeshellarg(session('end_date'));
             
-            $scriptPath = base_path('storage/scripts/fuzzy_match.py');
+            $script_path = base_path('storage\scripts\fuzzy_match.py');
+
+            // Get the path to the Documents folder
+            $documentsPath = rtrim(getenv('USERPROFILE') ?: getenv('HOME'), DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . 'Documents';
 
             set_time_limit(0); // Unlimited execution time
 
             try {
-                $output = shell_exec("python $scriptPath $request_name $request_file $program $usertype $poo");
+                // dd("Starting Python script execution...");
+                // $output = shell_exec("python $script_path $request_name $request_file $program $user_type $poo");
+                $process = new Process(['where', 'python']);
+                $process->run();
+                $output = trim($process->getOutput());
+                $paths = preg_split('/\r\n|\r|\n/', $output);
+
+                // Get the first path only
+                $pythonPath = $paths[0] ?? null;
+                // dd($pythonPath);
+
+                $file = "RDV";
+                $args = array_map(fn($arg) => trim($arg, "\""), [
+                    $pythonPath,
+                    $script_path,
+                    $request_name,
+                    $request_file,
+                    $program,
+                    $user_type,
+                    $poo,
+                    $documentsPath,
+                    $file,
+                    $name
+                ]);
+
+                $process = new Process($args);
+                $process->setTimeout(null);
+                $process->run(); // run() if sync/blocking
+
+                // Store the PID for later use
+                // session(['dedup_pid' => $process->getPid()]);
+                // $request->session()->put('d_pid', $process->getPid());
+                // dd("Process started with PID: " . $process->getPid());
+                if (!$process->isSuccessful()) {
+                    Log::error("Error from Python script: " . $process->getErrorOutput());
+                    throw new \RuntimeException($process->getErrorOutput());
+                }
+
+                $output = $process->getOutput();
 
                 if ($output === null) {
                     Log::error("Python script execution failed.");
@@ -147,14 +179,58 @@ class MultiStep extends Controller
                 $request->session()->put('duplicate_list', $data['duplicate_list']);
                 $request->session()->put('served_list', $data['served_list']);
 
-                // Get the path to the Documents folder
-                $documentsPath = rtrim(getenv('USERPROFILE') ?: getenv('HOME'), DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . 'Documents';
-
                 // Output file path in the Documents folder
                 $outputPath = $documentsPath . DIRECTORY_SEPARATOR . $fileName;
 
                 // Save the file
                 $templateProcessor->saveAs($outputPath);
+
+                try {
+                    if ($program == 'ECT') {
+                        
+                        DB::table('ect_requests')->insert([
+                            'stakeholder' => session('stakeholder'),
+                            'focal_person' => session('focal_person'),
+                            'file_name' => session('uploaded_request_file_name'),
+                            'date_received' => date('Y-m-d'),
+                            'contact_person' => session('contact_person'),
+                            'contact_email' => session('contact_email'),
+                            'contact_number' => session('contact_number'),
+                            'raw_list' => $data['master_list'],
+                            'possible_duplicates' => $data['duplicate_list'],
+                            'invalid_records' => $data['invalid_list'],
+                            'served_individuals' => $data['served_list'],
+                            'total_valid' => $data['clean_list'],
+                            'prepared_by' => $request->user()->name,
+                            'division_chief' => $division_chief
+                        ]);
+                    }
+
+                    if ($program == 'AICS') {
+                        
+                        DB::table('aics_requests')->insert([
+                            'activity_title' => session('activity_title'),
+                            'stakeholder' => session('stakeholder'),
+                            'focal_person' => session('focal_person'),
+                            'file_name' => session('uploaded_request_file_name'),
+                            'date_received' => date('Y-m-d'),
+                            'contact_person' => session('contact_person'),
+                            'contact_email' => session('contact_email'),
+                            'contact_number' => session('contact_number'),
+                            'raw_list' => $data['master_list'],
+                            'possible_duplicates' => $data['duplicate_list'],
+                            'invalid_records' => $data['invalid_list'],
+                            'served_individuals' => $data['served_list'],
+                            'total_valid' => $data['clean_list'],
+                            'prepared_by' => $request->user()->name,
+                            'division_chief' => $division_chief
+                        ]);
+                    }
+                } catch (\Exception $e) {
+                    // dd($e->getMessage());
+                    DB::rollback();
+                    return back()->with('error', 'Database error');
+                }
 
                 return redirect()->back()
                     ->with('step', $nextStep)
@@ -174,64 +250,8 @@ class MultiStep extends Controller
             return redirect()->back()->with('step', $nextStep)->withInput();
         }
 
-        // dd(session()->all());
-        
-        if ($step === "4") {
-            try {
-                if ($program == 'ECT') {
-                    
-                    DB::table('ect_requests')->insert([
-                        'stakeholder' => session('stakeholder'),
-                        'focal_person' => session('focal_person'),
-                        'file_name' => session('uploaded_request_file_name'),
-                        'date_received' => date('Y-m-d'),
-                        'contact_person' => session('contact_person'),
-                        'contact_email' => session('contact_email'),
-                        'contact_number' => session('contact_number'),
-                        'raw_list' => $request->input('master_list'),
-                        'possible_duplicates' => $request->input('duplicate_list'),
-                        'invalid_records' => $request->input('invalid_list'),
-                        'served_individuals' => $request->input('served_list'),
-                        'total_valid' => $request->input('clean_list'),
-                        'prepared_by' => $request->user()->name,
-                        'division_chief' => $division_chief
-                    ]);
-                }
-
-                if ($program == 'AICS') {
-                    
-                    DB::table('aics_requests')->insert([
-                        'activity_title' => session('activity_title'),
-                        'stakeholder' => session('stakeholder'),
-                        'focal_person' => session('focal_person'),
-                        'file_name' => session('uploaded_request_file_name'),
-                        'date_received' => date('Y-m-d'),
-                        'contact_person' => session('contact_person'),
-                        'contact_email' => session('contact_email'),
-                        'contact_number' => session('contact_number'),
-                        'raw_list' => $request->input('master_list'),
-                        'possible_duplicates' => $request->input('duplicate_list'),
-                        'invalid_records' => $request->input('invalid_list'),
-                        'served_individuals' => $request->input('served_list'),
-                        'total_valid' => $request->input('clean_list'),
-                        'prepared_by' => $request->user()->name,
-                        'division_chief' => $division_chief
-                    ]);
-                }
-            } catch (\Exception $e) {
-                dd($e->getMessage());
-                DB::rollback();
-                return back()->with('error', 'Database error');
-            }
-        }
-
-        $this->clearTemporaryFile();
-        return redirect()->back()->with('success', 'Form submitted successfully!');
-    }
-
-    public function complete(Request $request)
-    {
-
+        // $this->clearTemporaryFile();
+        return redirect()->back()->with('success', 'Result was saved successfully.');
     }
 
     private function getValidationRulesForStep($request, $step)
@@ -244,19 +264,12 @@ class MultiStep extends Controller
                     'focal_person' => 'required|string|max:255',
                     'contact_person' => 'required|string|max:255',
                     'contact_email' => 'required|email|max:255',
-                    'contact_number' => 'required|string|max:255',
+                    'contact_number' => ['required', 'regex:/^09\d{9}$/'],
                 ];
             case 2:
                 return [
-                    'request' => $request->has('request') ? 'required|file|mimes:xlsx|max:2048' : 'nullable|file|mimes:xlsx|max:2048',
+                    'request' => $request->has('request') ? 'required|file|mimes:csv,txt|max:51200' : 'nullable|file|mimes:csv|max:51200',
                 ];
-            // case 2:
-            //     return [
-            //         'start_date' => 'required|date',
-            //         'end_date' => 'required|date|after_or_equal:start_date',
-            //     ];
-            case 3;
-                return [];
             default:
                 return [];
         }
@@ -273,15 +286,11 @@ class MultiStep extends Controller
             // Optionally, recreate the directory if needed
             Storage::makeDirectory($tempDirectory);
         }
-
-        // session()->flush();
         
         session()->forget(
             [
                 'uploaded_request_file_path', 
                 'uploaded_request_file_name',
-                // 'start_date', 
-                // 'end_date',
                 'activity_title',
                 'stakeholder',
                 'focal_person',
@@ -303,4 +312,72 @@ class MultiStep extends Controller
 
         abort(404); // File not found
     }
+
+    public function stopDeduplication()
+    {
+        $script_path = base_path('storage/scripts/fuzzy_match.py');
+
+        // dd("Stopping deduplication process...");
+        // Log::error("Entered stopDeduplication.");
+        $args = array_map(fn($arg) => trim($arg, "\""), [
+            'python',
+            $script_path,
+            '',
+            '',
+            '',
+            '',
+            '',
+            ''
+        ]);
+
+        $process = new Process($args);
+        $process->setTimeout(null);
+        $process->run();
+
+        if (!$process->isSuccessful()) {
+            Log::error("Error from Python script: " . $process->getErrorOutput());
+            throw new \RuntimeException($process->getErrorOutput());
+        }
+
+        $output = $process->getOutput();
+
+        if ($output === null) {
+            Log::error("Python script execution failed.");
+            // return back()->with('error', 'Python script execution failed.');
+            // return back()->with('error', 'Something went wrong.');
+            return response()->json(['error' => 'Something went wrong.']);
+        }
+
+        $data = json_decode($output, true);
+
+        if (!$data || $data === null) {
+            Log::error("Invalid JSON response from Python script: " . $output);
+
+            return response()->json(['error' => 'Invalid response from the Python script.']);
+        }
+    
+        if(isset($data['status']) && $data['status'] == 'error'){
+            // dd($data);
+            return back()->with('error', $data['message']);
+        }
+
+        if ($data) {
+            return response()->json(['error' => 'Deduplication process has been stopped successfully!']);
+        }
+
+        return response()->json(['status' => 'no-process']);
+    }
+
+    public function checkDeduplicationStatus()
+    {
+        $file = storage_path('app/output.json');
+        
+        if (file_exists($file)) {
+            $data = json_decode(file_get_contents($file), true);
+            return response()->json($data);
+        }
+
+        return response()->json(['status' => 'processing']);
+    }
+
 }

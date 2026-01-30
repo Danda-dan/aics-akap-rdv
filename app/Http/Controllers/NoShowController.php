@@ -15,6 +15,8 @@ class NoShowController extends Controller
             'noShow' => 'required|file|mimes:csv|max:51200', // Max size 50MB
         ]);
 
+        $name = $request->user()->name ? $request->user()->name : 'None';
+
         // dd($request);
         if ($request->hasFile('noShow')) {
             $file = $request->file('noShow');
@@ -33,11 +35,11 @@ class NoShowController extends Controller
             set_time_limit(0); // Unlimited execution time
             
             try {
-                $output = shell_exec("python $scriptPath $request_name $request_file");
+                $name = escapeshellarg($name);
+                $output = shell_exec("python $scriptPath $request_name $request_file $name");
 
                 if ($output === null) {
                     Log::error("Python script execution failed.");
-                    // return back()->with('error', 'Python script execution failed.');
                     return redirect()->back()->with('error', 'Something went wrong.');
                 }
 
@@ -45,7 +47,6 @@ class NoShowController extends Controller
 
                 if (!$data || $data === null) {
                     Log::error("Invalid JSON response from Python script: " . $output);
-                    // return back()->with('error', 'Invalid response from the Python script.');
                     return redirect()->back()->with('error', 'Something went wrong.');
                 }
 
@@ -53,41 +54,43 @@ class NoShowController extends Controller
                 $this->clearTemporaryFile();
                 
                 if(isset($data['message']) && $data["message"]){
-                    // Return a success response
                     return redirect()->route('no-show')->with('success', 'No Show Clients removed from the clean list successfully!');
+
+                } elseif(isset($data['message']) && $data["message"] == false) {
+                    $msg = $data['missing_cols'] ?? "";
+
+                    Log::error("Error: " . $msg);
+                    return back()->with('error', 'Info: ' . $msg);
                 } else {
-                    // Return an error response
                     return back()->with('error', 'An error occurred.');
+
                 }
             } catch (\Exception $e) {
                 return back()->with('error', 'An error occurred.');
+
             }
         } else {
-            // Return an error response
             return back()->with('error', 'An error occurred.');
+
         }
     }
 
     public function clearTemporaryFile()
     {
-        // Define the path to the temporary directory
         $tempDirectory = 'temp';
 
         // Check if the directory exists and delete all files within it
         if (Storage::exists($tempDirectory)) {
             Storage::deleteDirectory($tempDirectory);
+
             // Optionally, recreate the directory if needed
             Storage::makeDirectory($tempDirectory);
         }
-
-        // session()->flush();
         
         session()->forget(
             [
                 'uploaded_no_show_file_path', 
                 'uploaded_no_show_file_name',
-                // 'start_date', 
-                // 'end_date',
                 'activity_title',
                 'stakeholder',
                 'focal_person',

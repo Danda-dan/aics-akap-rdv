@@ -5,19 +5,23 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Validator;
 
 class ImportServed extends Controller
 {
     public function importForm(Request $request)
     {
+        // dd($request->file('served')->getMimeType());
 
         $request->validate([
-            'served' => 'required|file|mimes:csv|max:51200', // Max size 50MB
+            'served' => 'required|file|mimes:csv,txt|max:51200', // Max size 50MB
         ]);
         
+        $name = $request->user()->name ? $request->user()->name : 'None';
         $program = $request->user()->program ? $request->user()->program->name : 'None';
 
         // dd($request);
+        
         if ($request->hasFile('served')) {
             $file = $request->file('served');
             $filePath = $file->store('temp');
@@ -35,12 +39,13 @@ class ImportServed extends Controller
             set_time_limit(0); // Unlimited execution time
 
             try{
-                $output = shell_exec("python $scriptPath $request_name $request_file $program");
+                $name = escapeshellarg($name);
+                $output = shell_exec("python $scriptPath $request_name $request_file $program $name");
 
                 if ($output === null) {
                     Log::error("Python script execution failed.");
                     // return back()->with('error', 'Python script execution failed.');
-                    return redirect()->back()->with('error', 'Something went wrong.');
+                    return redirect()->back()->with('error', 'Error processing request.');
                 }
 
                 $data = json_decode($output, true);
@@ -48,7 +53,7 @@ class ImportServed extends Controller
                 if (!$data || $data === null) {
                     Log::error("Invalid JSON response from Python script: " . $output);
                     // return back()->with('error', 'Invalid response from the Python script.');
-                    return redirect()->back()->with('error', 'Something went wrong.');
+                    return redirect()->back()->with('error', 'Error processing request.');
                 }
     
                 // dd($data);
@@ -56,10 +61,26 @@ class ImportServed extends Controller
                 
                 if(isset($data['message']) && $data["message"]){
                     // Return a success response
+                    // dd($data);
                     return redirect()->route('import-served')->with('success', 'Data saved successfully!');
+                } elseif (isset($data['message']) && !$data["message"]) {
+                    if(isset($data['invalid_date']) && $data["invalid_date"]){
+                        $invalidRows = $data['invalid_rows'] ?? [];
+                        // dd($invalidRows);
+                        // $invalidRowsString = implode(', ', $invalidRows);
+                        Log::error("Invalid birthdate values");
+                        return back()->with('error', 'Invalid birthdate values. Please check the file and try again.');
+                    } else {
+                        $missingColumns = $data['missing_cols'] ?? [];
+                        $missingColumnsString = implode(', ', $missingColumns);
+                        Log::error("Wrong file template: Missing columns/data: " . $missingColumnsString);
+                        return back()->with('error', 'Wrong file template: Missing columns/data: ' . $missingColumnsString);
+                    }
+                    
                 } else {
                     // Return an error response
-                    return back()->with('error', 'Something went wrong.');
+                    Log::error("Unexpected response from Python script: " . $output);
+                    return back()->with('error', 'Error processing request.');
                 }
             } catch (Exception $e) {
                 return response()->json(['error' => $e->getMessage()], 500);
@@ -67,7 +88,7 @@ class ImportServed extends Controller
             
         } else {
             // Return an error response
-            return back()->with('error', 'An error occurred.');
+            return back()->with('error', 'Error processing request.');
         }
     }
 

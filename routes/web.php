@@ -8,35 +8,37 @@ use App\Http\Controllers\ForceEntryController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
-    return view('welcome');
+    return auth()->check() ? redirect()->route('dashboard') : redirect()->route('login');
 });
 
 Route::get('/home', function () {
     return view('dashboard');
-})->middleware(['auth', 'verified'])->name('home');
+})->middleware(['auth', 'verified', 'prevent-back-history'])->name('home');
 
 Route::get('/import-served', function () {
     return view('import-served');
-})->middleware(['auth', 'verified'])->name('import-served');
+})->middleware(['auth', 'verified', 'prevent-back-history'])->name('import-served');
 
 Route::get('/no-show', function () {
     return view('no-show');
-})->middleware(['auth', 'verified'])->name('no-show');
+})->middleware(['auth', 'verified', 'prevent-back-history'])->name('no-show');
 
 Route::get('/force-entry', function () {
     return view('force-entry');
-})->middleware(['auth', 'verified'])->name('force-entry');
+})->middleware(['auth', 'verified', 'prevent-back-history'])->name('force-entry');
 
-Route::middleware('auth')->group(function () {
+Route::middleware(['auth', 'prevent-back-history'])->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
-});
 
-Route::post('/submit-form', [MultiStep::class, 'submitForm'])->name('form.submit');
-Route::post('/import-form', [ImportServed::class, 'importForm'])->name('form.import');
-Route::post('/import-file', [NoShowController::class, 'importFIle'])->name('file.import');
-Route::post('/import-force-entry', [ForceEntryController::class, 'importFIle'])->name('upload.csv');
-Route::get('/file/show/{path}/{name}', [MultiStep::class, 'show'])->name('file.show');
+    Route::post('/submit-form', [MultiStep::class, 'submitForm'])->name('form.submit');
+    Route::post('/stop-deduplication', [MultiStep::class, 'stopDeduplication'])->name('form.stop');
+    Route::get('/deduplication-status', [MultiStep::class, 'checkDeduplicationStatus'])->name('dedup.status');
+    Route::post('/import-form', [ImportServed::class, 'importForm'])->name('form.import');
+    Route::post('/import-file', [NoShowController::class, 'importFile'])->name('file.import');
+    Route::post('/import-force-entry', [ForceEntryController::class, 'importFile'])->name('upload.csv');
+    Route::get('/file/show/{path}/{name}', [MultiStep::class, 'show'])->name('file.show');
+});
 
 require __DIR__.'/auth.php';
