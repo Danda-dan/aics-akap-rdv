@@ -52,12 +52,13 @@ class MultiStep extends Controller
 
         if ($step === "1") {
             // Store the file temporarily
-            $request->session()->put('activity_title', $request->input('activity_title'));
-            $request->session()->put('stakeholder', $request->input('stakeholder'));
-            $request->session()->put('focal_person', $request->input('focal_person'));
-            $request->session()->put('contact_person', $request->input('contact_person'));
-            $request->session()->put('contact_email', $request->input('contact_email'));
-            $request->session()->put('contact_number', $request->input('contact_number'));
+            $request->session()->put('payout_mode', $request->input('mode'));
+            $request->session()->put('requesting_partner', $request->input('requesting_partner'));
+            $request->session()->put('sdo', $request->input('sdo'));
+            $request->session()->put('check_number', $request->input('check_number'));
+            $request->session()->put('check_date_issued', $request->input('check_date_issued'));
+            $request->session()->put('payout_site', $request->input('payout_site'));
+            $request->session()->put('poo_rdv_focal', $request->input('poo_rdv_focal'));
         }
         
         // Save the uploaded file if this is the file step (e.g., Step 2)
@@ -76,13 +77,14 @@ class MultiStep extends Controller
 
             // Create a new TemplateProcessor instance
             $templateProcessor = new TemplateProcessor($templatePath);
-            $templateProcessor->setValue('stakeholder', session('stakeholder'));
-            $templateProcessor->setValue('focal_person', session('focal_person'));
+            $templateProcessor->setValue('requesting_partner', session('requesting_partner'));
+            $templateProcessor->setValue('sdo', session('sdo'));
             $templateProcessor->setValue('file_name', session('uploaded_request_file_name'));
             $templateProcessor->setValue('date_received', $current_date);
-            $templateProcessor->setValue('contact_person', session('contact_person'));
-            $templateProcessor->setValue('contact_email', session('contact_email'));
-            $templateProcessor->setValue('contact_number', session('contact_number'));
+            $templateProcessor->setValue('poo_rdv_focal', session('poo_rdv_focal'));
+            $templateProcessor->setValue('check_number', session('check_number'));
+            $templateProcessor->setValue('check_date_issued', session('check_date_issued'));
+            $templateProcessor->setValue('payout_site', session('payout_site'));
             $templateProcessor->setValue('prepared_by', $request->user()->name);
             $templateProcessor->setValue('position', $position);
             $templateProcessor->setValue('division_chief', $division_chief);
@@ -91,6 +93,14 @@ class MultiStep extends Controller
 
             $request_name = escapeshellarg(session('uploaded_request_file_name'));
             $request_file = escapeshellarg(session('uploaded_request_file_path'));
+
+            $payout_mode = escapeshellarg(session('payout_mode'));
+            $requesting_partner = escapeshellarg(session('requesting_partner'));
+            $sdo = escapeshellarg(session('sdo'));
+            $check_number = escapeshellarg(session('check_number'));
+            $check_date_issued = escapeshellarg(session('check_date_issued'));
+            $payout_site = escapeshellarg(session('payout_site'));
+            $poo_rdv_focal = escapeshellarg(session('poo_rdv_focal'));
             
             $script_path = base_path('storage\scripts\fuzzy_match.py');
 
@@ -122,17 +132,22 @@ class MultiStep extends Controller
                     $poo,
                     $documentsPath,
                     $file,
-                    $name
+                    $name,
+                    $requesting_partner,
+                    $sdo,
+                    $check_number,
+                    $check_date_issued,
+                    $payout_site,
+                    $poo_rdv_focal,
+                    $payout_mode
                 ]);
 
                 $process = new Process($args);
                 $process->setTimeout(null);
                 $process->run(); // run() if sync/blocking
 
-                // Store the PID for later use
-                // session(['dedup_pid' => $process->getPid()]);
-                // $request->session()->put('d_pid', $process->getPid());
-                // dd("Process started with PID: " . $process->getPid());
+                // dd("Process executed." . $process->getOutput());
+
                 if (!$process->isSuccessful()) {
                     Log::error("Error from Python script: " . $process->getErrorOutput());
                     throw new \RuntimeException($process->getErrorOutput());
@@ -209,14 +224,15 @@ class MultiStep extends Controller
                     if ($program == 'AICS') {
                         
                         DB::table('aics_requests')->insert([
-                            'activity_title' => session('activity_title'),
-                            'stakeholder' => session('stakeholder'),
-                            'focal_person' => session('focal_person'),
+                            'requesting_partner' => session('requesting_partner'),
+                            'payout_mode' => session('payout_mode'),
+                            'sdo' => session('sdo'),
+                            'check_number' => session('check_number'),
                             'file_name' => session('uploaded_request_file_name'),
                             'date_received' => date('Y-m-d'),
-                            'contact_person' => session('contact_person'),
-                            'contact_email' => session('contact_email'),
-                            'contact_number' => session('contact_number'),
+                            'check_date_issued' => session('check_date_issued'),
+                            'payout_site' => session('payout_site'),
+                            'poo_rdv_focal' => session('poo_rdv_focal'),
                             'raw_list' => $data['master_list'],
                             'possible_duplicates' => $data['duplicate_list'],
                             'invalid_records' => $data['invalid_list'],
@@ -259,12 +275,12 @@ class MultiStep extends Controller
         switch ($step) {
             case 1:
                 return [
-                    'activity_title' => 'required|string|max:255',
-                    'stakeholder' => 'required|string|max:255',
-                    'focal_person' => 'required|string|max:255',
-                    'contact_person' => 'required|string|max:255',
-                    'contact_email' => 'required|email|max:255',
-                    'contact_number' => ['required', 'regex:/^09\d{9}$/'],
+                    'requesting_partner' => 'required|string|max:255',
+                    'sdo'    => $request->mode === 'sdo' ? 'required|string' : 'nullable',
+                    'check_number'   => $request->mode === 'sdo' ? 'required|string' : 'nullable',
+                    'check_date_issued' => $request->mode === 'sdo' ? 'required' : 'nullable',
+                    'payout_site'  => 'required|string|max:255',
+                    'poo_rdv_focal' => 'required|string|max:255',
                 ];
             case 2:
                 return [
@@ -291,12 +307,12 @@ class MultiStep extends Controller
             [
                 'uploaded_request_file_path', 
                 'uploaded_request_file_name',
-                'activity_title',
-                'stakeholder',
-                'focal_person',
-                'contact_person',
-                'contact_email',
-                'contact_number',
+                'requesting_partner',
+                'check_number',
+                'check_date_issued',
+                'sdo',
+                'payout_site',
+                'poo_rdv_focal',
             ]
         );
     }

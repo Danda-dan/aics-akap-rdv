@@ -15,7 +15,6 @@ from rapidfuzz import process, fuzz
 from mysql.connector import Error
 
 now = datetime.now().strftime("%m/%d/%Y %H:%M:%S")
-# print("\nTime started: ", now)
 
 # Retrieve arguments
 request_file = sys.argv[1]
@@ -26,6 +25,13 @@ poo = sys.argv[5]
 documents_path = sys.argv[6]
 file_process = sys.argv[7]
 name = sys.argv[8]
+requesting_partner = sys.argv[9]
+sdo = sys.argv[10]
+check_number = sys.argv[11]
+check_date_issued = sys.argv[12]
+payout_site = sys.argv[13]
+poo_rdv_focal = sys.argv[14]
+payout_mode = sys.argv[15]
 
 file_name = file_name.strip('"')  # just in case
 
@@ -71,6 +77,9 @@ if conn.is_connected():
         served_db_columns = [desc[0] for desc in cursor.description]
 
     elif program == 'AICS':
+        end_date = datetime.now()
+        start_date = end_date - timedelta(days=90)
+
         query = """
         SELECT * FROM aics_clean_list;
         """
@@ -79,7 +88,7 @@ if conn.is_connected():
         clean_list = cursor.fetchall()
         clean_list_columns = [desc[0] for desc in cursor.description]
 
-        cursor.execute("SELECT * FROM aics_served_database;")
+        cursor.execute("SELECT * FROM aics_served_database WHERE STR_TO_DATE(date_last_served, '%m-%d-%Y') BETWEEN DATE_SUB(CURDATE(), INTERVAL 90 DAY) AND CURDATE();")
         served_db = cursor.fetchall()
         served_db_columns = [desc[0] for desc in cursor.description]
 
@@ -115,8 +124,6 @@ clean_list_df['Full Name'] = clean_list_df['first_name'] + ' ' + clean_list_df['
 clean_list_df['Full Name 2'] = clean_list_df['first_name'] + ' ' + clean_list_df['last_name']
 clean_list_df['Full Name 3'] = clean_list_df['first_name'] + ' ' + clean_list_df['middle_name'].apply(clean_middle_value) + ' ' + clean_list_df['last_name']
 
-# clean_list_df[['Full Name', 'Full Name 2', 'Full Name 3']] = clean_list_df[['Full Name', 'Full Name 2', 'Full Name 3']].apply(lambda col: col.str.lower())
-
 name_cols = ['Full Name', 'Full Name 2', 'Full Name 3']
 clean_list_df[name_cols] = clean_list_df[name_cols].apply(lambda col: col.str.lower())
 
@@ -132,16 +139,12 @@ clean_list_df['Birthday'] = pd.to_datetime(clean_list_df[['birth_day', 'birth_mo
 
 clean_list_df['Birthday'] = clean_list_df['Birthday'].dt.strftime('%d %m %Y')
 
-# clean_list_df['Birthday'] = clean_list_df['birth_day'] + ' ' + clean_list_df['birth_month'] + ' ' + clean_list_df['birth_year']
-
 db_df = pd.DataFrame(served_db, columns=served_db_columns)
 db_df = db_df.astype(str)
 
 db_df['Full Name'] = db_df['first_name'] + ' ' + db_df['middle_name'] + ' ' + db_df['last_name']
 db_df['Full Name 2'] = db_df['first_name'] + ' ' + db_df['last_name']
 db_df['Full Name 3'] = db_df['first_name'] + ' ' + db_df['middle_name'].apply(clean_middle_value) + ' ' + db_df['last_name']
-
-# db_df[['Full Name', 'Full Name 2', 'Full Name 3']] = db_df[['Full Name', 'Full Name 2', 'Full Name 3']].apply(lambda col: col.str.lower())
 
 name_cols = ['Full Name', 'Full Name 2', 'Full Name 3']
 db_df[name_cols] = db_df[name_cols].apply(lambda col: col.str.lower())
@@ -152,27 +155,16 @@ db_df['Full Name 3'] = db_df['Full Name 3'].apply(lambda x: replace_multiple(x, 
 
 db_df[['Full Name', 'Full Name 2', 'Full Name 3']] = db_df[['Full Name', 'Full Name 2', 'Full Name 3']].map(lambda x: (str(x) + ' ').ljust(40, 'X'))
 
-# db_df['Birthday'] = pd.to_datetime(db_df[['birth_day', 'birth_month', 'birth_year']].rename(
-#         columns={'birth_year': 'year', 'birth_month': 'month', 'birth_day': 'day'}
-#     ), errors='coerce')
-
 cols_to_convert = ['birth_day', 'birth_month', 'birth_year']
 db_df[cols_to_convert] = db_df[cols_to_convert].astype(str).replace(r'[^0-9.]', '', regex=True)
 db_df[cols_to_convert] = db_df[cols_to_convert].apply(
     lambda col: pd.to_numeric(col, errors='coerce')
 )
-# db_df = db_df.dropna(subset=cols_to_convert)
+
 db_df[cols_to_convert] = db_df[cols_to_convert].fillna(0)
 db_df[cols_to_convert] = db_df[cols_to_convert].astype(int)
 db_df[cols_to_convert] = db_df[cols_to_convert].astype(str).map(lambda x: x.zfill(2))
 db_df['Birthday'] = db_df['birth_day'] + ' ' + db_df['birth_month'] + ' ' + db_df['birth_year']
-
-# db_df['Birthday'] = db_df['Birthday'].apply(parser.parse)
-# db_df['Birthday'] = db_df['Birthday'].apply(lambda x: x.strftime('%d %m %Y'))
-
-# db_df['Birthday'] = db_df['birth_day'] + ' ' + db_df['birth_month'] + ' ' + db_df['birth_year']
-
-# columns_to_retain = ["FIRST NAME", "MIDDLE NAME", "LAST NAME", "EXTENSION NAME", "BIRTHDAY", "CITY/MUNICIPALITY", "BARANGAY"]
 
 master_list = pd.DataFrame()
 valid_recs = pd.DataFrame()
@@ -203,7 +195,13 @@ column_mapping = {
     'AMOUNT': 'amount',
     'CHARGING': 'charging',
     'File Source': 'file_source',
-    'DATE PROCESSED': 'date_processed'
+    'DATE PROCESSED': 'date_processed',
+    'REQUESTING PARTNER': 'requesting_partner',
+    'SDO': 'sdo',
+    'CHECK NUMBER': 'check_number',
+    'CHECK DATE ISSUED': 'check_date_issued',
+    'PAYOUT SITE': 'payout_site',
+    'POO RDV FOCAL': 'poo_rdv_focal',
     # Add more mappings as needed
 }
 
@@ -248,11 +246,6 @@ def save_clean_list(row):
 
             print(json.dumps(response))
             sys.exit()
-
-    # finally:
-    #     if conn.is_connected():
-    #         cursor.close()
-    #         conn.close()
 
 # Remove special characters in the file, except "-"
 def remove_special_chars(text):
@@ -309,9 +302,6 @@ def generate_random_code(existing_codes, province):
         code_components = letters + numbers
         random.shuffle(code_components)
         base_code = ''.join(code_components)
-        # if city_muni == 'Davao City' or city_muni == 'DAVAO CITY' or city_muni == 'CITY OF DAVAO' or city_muni == 'City of Davao':
-        #     control_number = f"DVO-{base_code}"
-        # else:
         
         if province == '' or province is None:
             control_number = f"RDV-{base_code}"
@@ -361,10 +351,15 @@ if usertype != 'grievance_officer':
         raise ValueError(f"Column AMOUNT contains empty values. Please ensure all rows have values.")
 
 df['File Source'] = request_file
+df['REQUESTING PARTNER'] = requesting_partner
+df['SDO'] = sdo
+df['CHECK NUMBER'] = check_number
+df['CHECK DATE ISSUED'] = check_date_issued
+df['PAYOUT SITE'] = payout_site
+df['POO RDV FOCAL'] = poo_rdv_focal
+df['PAYOUT MODE'] = payout_mode
 
 master_list = pd.concat([master_list, df], ignore_index=True)
-
-# df = df[columns_to_retain]
     
 other_cols = df.columns.difference(['PROVINCE', 'CITY/MUNICIPALITY', 'BARANGAY', 'PUROK'])
 df[other_cols] = df[other_cols].map(remove_special_chars)
@@ -374,14 +369,6 @@ df['AMOUNT'] = df['AMOUNT'].apply(clean_amount)
 df['File Source'] = request_file
 df = df.fillna('')
 df = df.astype(str)
-
-# df['Birthday'] = pd.to_datetime(df[['BIRTH DAY', 'BIRTH MONTH', 'BIRTH YEAR']].rename(
-#         columns={'BIRTH YEAR': 'year', 'BIRTH MONTH': 'month', 'BIRTH DAY': 'day'}
-#     ), errors='coerce')
-
-# df['BIRTH DAY'] = df['BIRTH DAY'].astype(int)
-# df['BIRTH MONTH'] = df['BIRTH MONTH'].astype(int)
-# df['BIRTH YEAR'] = df['BIRTH YEAR'].astype(int)
 
 df['Birthday'] = df['BIRTH DAY'] + '/' + df['BIRTH MONTH'] + '/' + df['BIRTH YEAR']
 
@@ -399,7 +386,6 @@ valid_recs_no_mid = pd.concat([valid_recs_no_mid, df_valid_no_mid], ignore_index
 invalid_recs = pd.concat([invalid_recs, df_invalid], ignore_index=True) 
 
 valid_recs = pd.concat([valid_recs, valid_recs_no_mid], ignore_index=True)
-# valid_recs['EXTENSION NAME'] = valid_recs['EXTENSION NAME'].astype(str)
 
 valid_recs['Birthday'] = pd.to_datetime(valid_recs['Birthday'], format='%d/%m/%Y', errors='coerce')
 valid_recs['Birthday'] = valid_recs['Birthday'].dt.strftime('%d %m %Y')
@@ -408,7 +394,6 @@ valid_recs['Full Name'] = valid_recs['FIRST NAME'] + ' ' + valid_recs['MIDDLE NA
 valid_recs['Full Name 2'] = valid_recs['FIRST NAME'] + ' ' + valid_recs['LAST NAME']
 valid_recs['Full Name 3'] = valid_recs['FIRST NAME'] + ' ' + valid_recs['MIDDLE NAME'].apply(clean_middle_value) + ' ' + valid_recs['LAST NAME']
 
-# valid_recs[['Full Name', 'Full Name 2', 'Full Name 3']] = valid_recs[['Full Name', 'Full Name 2', 'Full Name 3']].apply(lambda col: col.str.lower())
 name_cols = ['Full Name', 'Full Name 2', 'Full Name 3']
 valid_recs[name_cols] = valid_recs[name_cols].apply(lambda col: col.str.lower())
 
@@ -497,9 +482,6 @@ similar_index = []
 fullname_list = pd.DataFrame(fullname_list)
 
 valid_recs = valid_recs.reset_index(drop=True)
-
-# print('Duplicates:')
-# print(fullname_list)
 
 matches = []
 fullname_matches = []
@@ -781,7 +763,6 @@ existing_codes = set()
 clean_df['CONTROL NUMBER'] = [generate_random_code(existing_codes, poo) for _, row in clean_df.iterrows()]
 
 now = datetime.now().strftime("%m/%d/%Y")
-# print("\nTime finished: ", now)
 
 clean_df['Date Processed'] = now
 
@@ -792,9 +773,6 @@ clean_list_df['Birthday'] = clean_list_df['Birthday'].str.replace(' ', '/')
 
 # Set index to start at 1
 clean_df.index = pd.RangeIndex(start=1, stop=len(clean_df) + 1)
-
-# clean_list_df = pd.concat([clean_list_df, clean_df], ignore_index=True)
-# clean_list_df.astype(str)
 
 file_sources = set(master_list['File Source'].to_numpy())
 
@@ -807,23 +785,6 @@ for col in columns_to_modify:
 
 if usertype != 'grievance_officer' and not clean_df.empty:
     clean_df.apply(save_clean_list, axis=1)
-
-# Create the directory if it does not exist
-# if not os.path.exists("spreadsheets"):
-#     os.makedirs("spreadsheets")
-
-# if not os.path.exists("spreadsheets/result"):
-#     os.makedirs("spreadsheets/result")
-    
-# if not os.path.exists("spreadsheets/clean"):
-#     os.makedirs("spreadsheets/clean")
-
-# Get the Documents directory
-# documents_path = os.path.join(os.path.expanduser('~'), 'Documents')
-
-# Ensure the directory exists
-# if not os.path.exists(documents_path):
-#     os.makedirs(documents_path)
 
 clean_df['MONTHLY SALARY'] = clean_df['MONTHLY SALARY'].replace(['', None], 0)
 clean_df.drop(columns=['Full Name', 'Full Name 2', 'Full Name 3'], inplace=True)
@@ -840,25 +801,17 @@ for item in file_sources:
     with pd.ExcelWriter(result_file_path) as writer:  
         master_df_file.to_excel(writer, sheet_name='Raw List', index=False)
 
-        # clean_df_file.drop(columns=['Full Name', 'Full Name 2', 'Full Name 3'], inplace=True)
         clean_df_file.to_excel(writer, sheet_name='Clean', index=False)
 
         invalid_df_file.to_excel(writer, sheet_name='Invalid', index=False)
         dup_df_file.to_excel(writer, sheet_name='Duplicates', index=False)
         served_df_file.to_excel(writer, sheet_name='Served', index=False)
-    
-    # clean_file_path = os.path.join(documents_path, f'Clean List for {item} {now}.xlsx')
-    # clean_df_file.to_excel(clean_file_path, index=True)
 
     no_match_file_path = os.path.join(documents_path, f'No Match for {item} {now}.csv')
-    clean_df = clean_df[['CONTROL NUMBER', 'LAST NAME', 'FIRST NAME', 'MIDDLE NAME', 'EXTENSION NAME', 'BIRTH DAY', 'BIRTH MONTH', 'BIRTH YEAR', 'SEX', 'CIVIL STATUS', 'OCCUPATION', 'MONTHLY SALARY', 'CATEGORY', 'SUB-CATEGORY', 'CONTACT NUMBER', 'PUROK', 'BARANGAY', 'CITY/MUNICIPALITY', 'PROVINCE', 'TYPE OF ASSISTANCE', 'AMOUNT', 'CHARGING']]
-    # clean_df.drop(columns=['Full Name', 'Full Name 2', 'Full Name 3'], inplace=True)
+    clean_df['DATETIME PROCESSED'] = datetime.now().strftime("%d-%m-%Y %I:%M:%S %p")
+    clean_df = clean_df[['CONTROL NUMBER', 'LAST NAME', 'FIRST NAME', 'MIDDLE NAME', 'EXTENSION NAME', 'BIRTH DAY', 'BIRTH MONTH', 'BIRTH YEAR', 'SEX', 'CIVIL STATUS', 'OCCUPATION', 'MONTHLY SALARY', 'CATEGORY', 'SUB-CATEGORY', 'CONTACT NUMBER', 'PUROK', 'BARANGAY', 'CITY/MUNICIPALITY', 'PROVINCE', 'TYPE OF ASSISTANCE', 'AMOUNT', 'CHARGING', 'REQUESTING PARTNER', 'SDO', 'CHECK NUMBER', 'CHECK DATE ISSUED', 'PAYOUT SITE', 'POO RDV FOCAL', 'DATETIME PROCESSED']]
+
     clean_df.to_csv(no_match_file_path, index=False, encoding='utf-8-sig')
-
-# final_clean_file_path = os.path.join(documents_path, 'clean.xlsx')
-# clean_list_df.to_excel(final_clean_file_path, index=False)
-
-# print("\nSuccessfully generated the deduplication report.")
 
 if file_process == 'FORCE_ENTRY':    
     try:
@@ -893,8 +846,5 @@ result = {
 
 print(json.dumps(result))
 os.startfile(documents_path)
-
-# with open("output.json", "w") as f:
-#     json.dump(result, f)
 
 sys.exit()

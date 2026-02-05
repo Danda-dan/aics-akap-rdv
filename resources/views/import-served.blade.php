@@ -1,7 +1,7 @@
 <x-app-layout>
     <x-slot name="header">
         <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-            {{ __('Daily/Consolidated Served Clients') }}
+            {{ __('Upload Served Beneficiary List') }}
         </h2>
     </x-slot>
 
@@ -10,6 +10,7 @@
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
                 <div class="p-6 text-gray-900">
                     <div class="w-full max-w-2xl mx-auto mt-10">
+
                         <form method="POST" action="{{ route('form.import') }}" enctype="multipart/form-data">
                             @csrf
 
@@ -22,21 +23,13 @@
                             
                                 @error('served') <span class="text-red-500 text-sm mb-4">{{ $message }}</span> @enderror
 
-                                <!-- @if(session('uploaded_served_file_name'))
-                                    <p class="mt-2">Uploaded File: {{ session('uploaded_served_file_name') }}</p>
-                                    <p class="text-gray-500">You can upload a new file if you wish to replace this one.</p>
-                                @endif -->
                             </div>
 
                             <!-- Navigation Buttons -->
                             <div class="mt-8 flex justify-between">
                                 <button type="submit" class="px-4 py-2 bg-blue-500 text-white rounded">Import
-                                    <!-- <span x-text="step === ( maxSteps - 1 ) ? 'Verify' : 'Next'"></span> -->
                                 </button>
-                                
-                                <!-- <button type="submit" x-show="step === maxSteps"
-                                    class="px-4 py-2 bg-green-500 text-white rounded">Done
-                                </button> -->
+
                             </div>
 
                             <!-- Loading Modal -->

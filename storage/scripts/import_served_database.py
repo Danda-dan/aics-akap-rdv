@@ -57,7 +57,8 @@ column_mapping = {
     'PARTNERS': 'partners',
     'CHARGING': 'charging',
     'SDO INCHARGE': 'sdo_incharge',
-    'OTHER REMARKS': 'other_remarks'
+    'OTHER REMARKS': 'other_remarks',
+    'FILE SOURCE': 'file_source',
     # Add more mappings as needed
 }
 
@@ -103,6 +104,8 @@ def is_valid_date(date_series):
 df = df.fillna('')
 df = df.astype(str)
 df_rows = df.shape[0]
+
+df['FILE SOURCE'] = file_name
 
 df['Birthday'] = df['BIRTH DAY'] + '/' + df['BIRTH MONTH'] + '/' + df['BIRTH YEAR']
 

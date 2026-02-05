@@ -6,13 +6,12 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\DB;
 
 class ImportServed extends Controller
 {
     public function importForm(Request $request)
     {
-        // dd($request->file('served')->getMimeType());
-
         $request->validate([
             'served' => 'required|file|mimes:csv,txt|max:51200', // Max size 50MB
         ]);

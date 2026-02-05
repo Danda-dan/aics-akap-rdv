@@ -17,5 +17,5 @@ class EctServedDatabase extends Model
         'sdo',
         'date_paid',
         'source',
-    ]
+    ];
 }

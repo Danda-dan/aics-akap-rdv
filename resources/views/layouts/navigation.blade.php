@@ -18,6 +18,18 @@
                 </div>
 
                 <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
+                    <x-nav-link :href="route('served.benes')" :active="request()->routeIs('served.benes')">
+                        {{ __('Served Beneficiaries') }}
+                    </x-nav-link>
+                </div>
+
+                <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
+                    <x-nav-link :href="route('clean.list')" :active="request()->routeIs('clean.list')">
+                        {{ __('Clean List') }}
+                    </x-nav-link>
+                </div>
+
+                <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
                     <x-nav-link :href="route('import-served')" :active="request()->routeIs('import-served')">
                         {{ __('Import Served') }}
                     </x-nav-link>

@@ -20,5 +20,5 @@ class EctCleanList extends Model
         'purok',
         'file_source',
         'date_processed',
-    ]
+    ];
 }

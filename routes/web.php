@@ -5,6 +5,8 @@ use App\Http\Controllers\MultiStep;
 use App\Http\Controllers\ImportServed;
 use App\Http\Controllers\NoShowController;
 use App\Http\Controllers\ForceEntryController;
+use App\Http\Controllers\ServedController;
+use App\Http\Controllers\CleanListController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -35,6 +37,8 @@ Route::middleware(['auth', 'prevent-back-history'])->group(function () {
     Route::post('/submit-form', [MultiStep::class, 'submitForm'])->name('form.submit');
     Route::post('/stop-deduplication', [MultiStep::class, 'stopDeduplication'])->name('form.stop');
     Route::get('/deduplication-status', [MultiStep::class, 'checkDeduplicationStatus'])->name('dedup.status');
+    Route::get('/served-benes', [ServedController::class, 'index'])->name('served.benes');
+    Route::get('/clean_list', [CleanListController::class, 'index'])->name('clean.list');
     Route::post('/import-form', [ImportServed::class, 'importForm'])->name('form.import');
     Route::post('/import-file', [NoShowController::class, 'importFile'])->name('file.import');
     Route::post('/import-force-entry', [ForceEntryController::class, 'importFile'])->name('upload.csv');

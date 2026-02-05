@@ -14,47 +14,97 @@
     </div>
 
     <!-- Form Steps -->
-    <form x-data="{ isLoading: false, onStep: 3 }" x-init="$watch('isLoading', value => window.scriptRunning = value)" 
+    <form x-data="{ isLoading: false, onStep: 3, mode: '{{ old('mode', 'sdo') }}' }" x-init="$watch('isLoading', value => window.scriptRunning = value)" 
         x-on:submit="if (step === onStep) { isLoading = true }"
         method="POST" action="{{ route('form.submit') }}" enctype="multipart/form-data">
         @csrf
 
         <input type="hidden" name="current_step" x-bind:value="step">
         <!-- Step 1 -->
-        <div x-show="step === 1" class="max-w-2xl mx-auto p-6 bg-white shadow-md rounded-md">
-            <h2 class="text-xl font-bold mb-4">Step 1: Initial Details</h2>
+        <div 
+            x-show="step === 1"
+            class="max-w-2xl mx-auto p-6 bg-white shadow-md rounded-md"
+        >
+            <!-- Header + Radio Buttons -->
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="text-xl font-bold">Step 1: Initial Details</h2>
 
-            <input type="text" name="activity_title" value="{{ old('activity_title') }}" placeholder="Enter Activity Title" 
-                class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm mb-4 w-full" :required="step === 1">
-            @error('activity_title') <span class="text-red-500 text-sm mb-4">{{ $message }}</span> @enderror
+                <div class="flex items-center gap-4 text-sm">
+                    <label class="flex items-center gap-2 cursor-pointer">
+                        <input type="radio" name="mode" value="sdo" x-model="mode">
+                        SDO
+                    </label>
 
-            <input type="text" name="stakeholder" value="{{ old('stakeholder') }}" placeholder="Enter Stakeholder" 
-                class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm mb-4 w-full" :required="step === 1">
-            @error('stakeholder') <span class="text-red-500 text-sm mb-4">{{ $message }}</span> @enderror
+                    <label class="flex items-center gap-2 cursor-pointer">
+                        <input type="radio" name="mode" value="hybrid" x-model="mode">
+                        Hybrid
+                    </label>
+                </div>
+            </div>
 
-            <input type="text" name="focal_person" value="{{ old('focal_person') }}" placeholder="Enter Focal Person" 
-                class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm mb-4 w-full" :required="step === 1">
-            @error('focal_person') <span class="text-red-500 text-sm mb-4">{{ $message }}</span> @enderror
+            <!-- Always required -->
+            <input type="text" name="requesting_partner" value="{{ old('requesting_partner') }}"
+                placeholder="Enter Requesting Partner"
+                class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm mb-4 w-full"
+                required>
+            @error('requesting_partner') <span class="text-red-500 text-sm mb-4">{{ $message }}</span> @enderror
 
-            <input type="text" name="contact_person" value="{{ old('contact_person') }}" placeholder="Enter Contact Person" 
-                class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm mb-4 w-full" :required="step === 1">
-            @error('contact_person') <span class="text-red-500 text-sm mb-4">{{ $message }}</span> @enderror
+            <!-- Disabled & not required when SDO -->
+            <input type="text" name="sdo" value="{{ old('sdo') }}"
+                placeholder="Enter SDO"
+                :required="mode === 'sdo'"
+                :disabled="mode === 'hybrid'"
+                :class="mode === 'hybrid' ? 'bg-gray-100 cursor-not-allowed' : ''"
+                class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm mb-4 w-full">
+            @error('sdo') <span class="text-red-500 text-sm mb-4">{{ $message }}</span> @enderror
 
-            <input type="email" name="contact_email" value="{{ old('contact_email') }}" placeholder="Enter Contact Email" 
-                class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm mb-4 w-full" :required="step === 1">
-            @error('contact_email') <span class="text-red-500 text-sm mb-4">{{ $message }}</span> @enderror
+            <input type="text" name="check_number" value="{{ old('check_number') }}"
+                placeholder="Enter Check Number"
+                :required="mode === 'sdo'"
+                :disabled="mode === 'hybrid'"
+                :class="mode === 'hybrid' ? 'bg-gray-100 cursor-not-allowed' : ''"
+                class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm mb-4 w-full">
+            @error('check_number') <span class="text-red-500 text-sm mb-4">{{ $message }}</span> @enderror
 
-            <input type="text" name="contact_number" value="{{ old('contact_number') }}" placeholder="Enter Contact Number. Ex: 09123456789" 
-                class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm mb-4 w-full" :required="step === 1">
-            @error('contact_number') <span class="text-red-500 text-sm mb-4">{{ $message }}</span> @enderror
+            <div class="mb-4 flex items-center gap-4">
+                <label for="check_date_issued"
+                    class="w-40 text-sm font-medium text-gray-700">
+                    Check Date Issued
+                </label>
+
+                <input
+                    id="check_date_issued"
+                    type="date"
+                    name="check_date_issued"
+                    value="{{ old('check_date_issued') }}"
+                    :required="mode === 'sdo'"
+                    :disabled="mode === 'hybrid'"
+                    :class="mode === 'hybrid' ? 'bg-gray-100 cursor-not-allowed' : ''"
+                    class="flex-1 border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm"
+                >
+            </div>
+
+            @error('check_date_issued')
+                <span class="text-red-500 text-sm mb-4 block ml-44">
+                    {{ $message }}
+                </span>
+            @enderror
+
+            <input type="text" name="payout_site" value="{{ old('payout_site') }}"
+                placeholder="Enter Payout Site"
+                class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm mb-4 w-full">
+            @error('payout_site') <span class="text-red-500 text-sm mb-4">{{ $message }}</span> @enderror
+
+            <input type="text" name="poo_rdv_focal" value="{{ old('poo_rdv_focal') }}"
+                placeholder="Enter POO RDV Focal"
+                class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm mb-4 w-full">
+            @error('poo_rdv_focal') <span class="text-red-500 text-sm mb-4">{{ $message }}</span> @enderror
         </div>
 
         <!-- Step 2 -->
         <div x-show="step === 2" x-data="{ hasUploadedFile: {{ session('uploaded_request_file_name') ? 'true' : 'false' }} }"
             class="max-w-2xl mx-auto p-6 bg-white shadow-md rounded-md">
             <h2 class="text-xl font-bold mb-4">Step 2: Import Raw File</h2>
-            <!-- <input type="text" name="phone" placeholder="Phone Number" class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm mb-4 w-full" :required="step === 2">
-            @error('phone') <span class="text-red-500 text-sm mb-4">{{ $message }}</span> @enderror -->
 
             <input type="file" name="request" id="request" class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm mb-4 w-full" 
                 :required="step === 2 && !hasUploadedFile">
@@ -96,22 +146,6 @@
             @error('clean') <span class="text-red-500 text-sm mb-4">{{ $message }}</span> @enderror
         </div>
 
-        <!-- Step 4 -->
-        <!-- <div x-show="step === 4" x-data="{ hasUploadedFile: {{ session('uploaded_served_file_name') ? 'true' : 'false' }} }"
-            class="max-w-2xl mx-auto p-6 bg-white shadow-md rounded-md">
-            <h2 class="text-xl font-bold mb-4">Step 4: Import Served Database</h2>
-            <input type="file" name="served" placeholder="Served Database File" 
-                class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm mb-4 w-full" 
-                :required="step === 4 && !hasUploadedFile">
-
-            @error('served') <span class="text-red-500 text-sm mb-4">{{ $message }}</span> @enderror
-            
-            @if(session('uploaded_served_file_name'))
-                <p class="mt-2">Uploaded File: {{ session('uploaded_served_file_name') }}</p>
-                <p class="text-gray-500">You can upload a new file if you wish to replace this one.</p>
-            @endif
-        </div> -->
-
         <!-- Step 5 -->
         <div x-show="step === 3">
             <div class="max-w-2xl mx-auto p-6 bg-white shadow-md rounded-md">
@@ -120,12 +154,12 @@
                 <div class="mb-4">
                     <h3 class="text-lg font-medium text-gray-700 mb-2">Step 1 Details</h3>
                     <div class="bg-gray-50 p-4 rounded-md shadow-inner">
-                        <p class="text-gray-600 mb-2"><span class="font-semibold">Activity Title:</span> {{ session('activity_title') ?? 'N/A' }}</p>
-                        <p class="text-gray-600 mb-2"><span class="font-semibold">Stakeholder:</span> {{ session('stakeholder') ?? 'N/A' }}</p>
-                        <p class="text-gray-600 mb-2"><span class="font-semibold">Focal Person:</span> {{ session('focal_person') ?? 'N/A' }}</p>
-                        <p class="text-gray-600 mb-2"><span class="font-semibold">Contact Person:</span> {{ session('contact_person') ?? 'N/A' }}</p>
-                        <p class="text-gray-600 mb-2"><span class="font-semibold">Contact Email:</span> {{ session('contact_email') ?? 'N/A' }}</p>
-                        <p class="text-gray-600"><span class="font-semibold">Contact Number:</span> {{ session('contact_number') ?? 'N/A' }}</p>
+                        <p class="text-gray-600 mb-2"><span class="font-semibold">Requesting Partner:</span> {{ session('requesting_partner') ?? 'N/A' }}</p>
+                        <p class="text-gray-600 mb-2"><span class="font-semibold">Special Disbursing Officer:</span> {{ session('sdo') ?? 'N/A' }}</p>
+                        <p class="text-gray-600 mb-2"><span class="font-semibold">Check Number:</span> {{ session('check_number') ?? 'N/A' }}</p>
+                        <p class="text-gray-600 mb-2"><span class="font-semibold">Check Date Issued:</span> {{ session('check_date_issued') ?? 'N/A' }}</p>
+                        <p class="text-gray-600 mb-2"><span class="font-semibold">Payout Site:</span> {{ session('payout_site') ?? 'N/A' }}</p>
+                        <p class="text-gray-600"><span class="font-semibold">POO RDV Focal:</span> {{ session('poo_rdv_focal') ?? 'N/A' }}</p>
                     </div>
                 </div>
 
@@ -147,34 +181,6 @@
                         </p>
                     </div>
                 </div>
-
-                <!-- <div class="mb-4">
-                    <h3 class="text-lg font-medium text-gray-700 mb-2">Step 3 Details</h3>
-                    <div class="bg-gray-50 p-4 rounded-md shadow-inner">
-                        <p class="text-gray-600 mb-2"><span class="font-semibold">Clean List Date Range</span></p>
-                        <p class="text-gray-600 mb-2"><span class="font-semibold">Start Date:</span> {{ date('M-d-Y', strtotime(session('start_date'))) ?? 'N/A' }}</p>
-                        <p class="text-gray-600"><span class="font-semibold">End Date:</span> {{ date('M-d-Y', strtotime(session('end_date'))) ?? 'N/A' }}</p>
-                    </div>
-                </div> -->
-
-                <!-- <div class="mb-4">
-                    <h3 class="text-lg font-medium text-gray-700 mb-2">Step 4 Details</h3>
-                    <div class="bg-gray-50 p-4 rounded-md shadow-inner">
-                        <p class="text-gray-600"><span class="font-semibold">Served Database:</span> 
-                            @if(session('uploaded_served_file_name'))
-                                <a href="{{ route('file.show', 
-                                [
-                                    'path' => basename(session('uploaded_served_file_path')),
-                                    'name' => basename(session('uploaded_served_file_name')),
-                                ]) }}" target="_blank" class="text-blue-500 underline">
-                                    {{ session('uploaded_served_file_name') }}
-                                </a>
-                            @else
-                                No document uploaded.
-                            @endif
-                        </p>
-                    </div>
-                </div> -->
             </div>
         </div>
 
@@ -242,12 +248,6 @@
             </div>
         </div>
 
-
-        <!-- @if (session('error'))
-            <div class="alert alert-danger text-2xl mt-5">
-                {{ session('error') }}
-            </div>
-        @endif -->
         <div x-data="{ show: false, message: '', type: 'success' }"
             x-show="show"
             x-init="
@@ -289,49 +289,9 @@
             e.preventDefault();
             e.returnValue = 'A script is still running. Are you sure you want to leave?';
 
-            // Attempt to stop the Python script
-            // navigator.sendBeacon('/stop-deduplication');
-            // fetch('/stop-deduplication', {
-            //     method: 'POST',
-            //     headers: {
-            //         'Content-Type': 'application/json',
-            //         'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-            //     },
-            //     body: JSON.stringify({}),
-            //     keepalive: true
-            // });
         } else {
             // Reset the count if no script is running
             count++;
         }
     });
-
-    // let pollingInterval = null;
-
-    // function checkStatus() {
-    //     fetch("{{ route('dedup.status') }}")
-    //         .then(response => response.json())
-    //         .then(data => {
-    //             if (data.status === 'done') {
-    //                 clearInterval(pollingInterval); // stop checking
-    //                 console.log('Process complete:', data);
-
-    //                 // You can now update the UI or redirect the user
-    //                 document.getElementById("status-message").innerText = "Deduplication completed!";
-    //                 // Optionally reload or fetch more data
-    //             } else {
-    //                 console.log('Still processing...');
-    //             }
-    //         })
-    //         .catch(error => {
-    //             console.error("Error checking status:", error);
-    //         });
-    // }
-
-    // Start polling every 3 seconds
-    // document.addEventListener('DOMContentLoaded', function () {
-    //     if (window.scriptRunning) {
-    //         pollingInterval = setInterval(checkStatus, 3000);
-    //     }
-    // });
 </script>
