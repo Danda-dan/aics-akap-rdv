@@ -1,7 +1,7 @@
 <!-- resources/views/components/multi-step-form.blade.php -->
-<div x-data="{ step: {{ session('step', 1) }}, maxSteps: {{ count($steps) }} }" class="w-full max-w-2xl mx-auto mt-10">
+<div x-data="{ step: {{ session('step', 1) }}, maxSteps: {{ count($steps) }} }" class="w-full max-w-2xl mx-auto">
     <!-- Step Indicator -->
-    <div class="flex justify-between mb-8">
+    <div class="flex justify-between mb-3">
         @foreach ($steps as $index => $step)
             <div class="flex-1 text-center">
                 <div :class="step === {{ $index + 1 }} ? 'bg-blue-500 text-white' : 'bg-gray-300 text-gray-600'"
@@ -14,7 +14,7 @@
     </div>
 
     <!-- Form Steps -->
-    <form x-data="{ isLoading: false, onStep: 3, mode: '{{ old('mode', 'sdo') }}' }" x-init="$watch('isLoading', value => window.scriptRunning = value)" 
+    <form x-data="{ isLoading: false, onStep: 3, mode: '{{ old('mode', 'sdo') }}', entry_type: '{{ old('entry_type', 'Crossmatch') }}' }" x-init="$watch('isLoading', value => window.scriptRunning = value)" 
         x-on:submit="if (step === onStep) { isLoading = true }"
         method="POST" action="{{ route('form.submit') }}" enctype="multipart/form-data">
         @csrf
@@ -31,16 +31,40 @@
 
                 <div class="flex items-center gap-4 text-sm">
                     <label class="flex items-center gap-2 cursor-pointer">
-                        <input type="radio" name="mode" value="sdo" x-model="mode">
-                        SDO
+                        <input type="radio" name="entry_type" x-model="entry_type" value="Crossmatch" checked>
+                        Crossmatch
                     </label>
 
                     <label class="flex items-center gap-2 cursor-pointer">
-                        <input type="radio" name="mode" value="hybrid" x-model="mode">
-                        Hybrid
+                        <input type="radio" name="entry_type" x-model="entry_type" value="Force Entry">
+                        Force Entry
                     </label>
                 </div>
             </div>
+
+            <div class="mb-4">
+                <select
+                    id="mode"
+                    name="mode"
+                    x-model="mode"
+                    required
+                    class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm w-full"
+                >
+                    <option value="">-- Select Payout Type --</option>
+                    <option value="sdo" {{ old('mode') == 'sdo' ? 'selected' : '' }}>
+                        SDO
+                    </option>
+                    <option value="hybrid" {{ old('mode') == 'hybrid' ? 'selected' : '' }}>
+                        Hybrid
+                    </option>
+                </select>
+            </div>
+
+            @error('mode')
+                <span class="text-red-500 text-sm mb-4 block">
+                    {{ $message }}
+                </span>
+            @enderror
 
             <!-- Always required -->
             <input type="text" name="requesting_partner" value="{{ old('requesting_partner') }}"
@@ -54,7 +78,7 @@
                 placeholder="Enter SDO"
                 :required="mode === 'sdo'"
                 :disabled="mode === 'hybrid'"
-                :class="mode === 'hybrid' ? 'bg-gray-100 cursor-not-allowed' : ''"
+                :class="mode === 'hybrid' ? 'bg-gray-200 cursor-not-allowed' : ''"
                 class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm mb-4 w-full">
             @error('sdo') <span class="text-red-500 text-sm mb-4">{{ $message }}</span> @enderror
 
@@ -62,7 +86,7 @@
                 placeholder="Enter Check Number"
                 :required="mode === 'sdo'"
                 :disabled="mode === 'hybrid'"
-                :class="mode === 'hybrid' ? 'bg-gray-100 cursor-not-allowed' : ''"
+                :class="mode === 'hybrid' ? 'bg-gray-200 cursor-not-allowed' : ''"
                 class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm mb-4 w-full">
             @error('check_number') <span class="text-red-500 text-sm mb-4">{{ $message }}</span> @enderror
 
@@ -79,7 +103,7 @@
                     value="{{ old('check_date_issued') }}"
                     :required="mode === 'sdo'"
                     :disabled="mode === 'hybrid'"
-                    :class="mode === 'hybrid' ? 'bg-gray-100 cursor-not-allowed' : ''"
+                    :class="mode === 'hybrid' ? 'bg-gray-200 cursor-not-allowed' : ''"
                     class="flex-1 border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm"
                 >
             </div>
@@ -91,20 +115,34 @@
             @enderror
 
             <input type="text" name="payout_site" value="{{ old('payout_site') }}"
-                placeholder="Enter Payout Site"
-                class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm mb-4 w-full">
+                placeholder="Enter Payout Site" 
+                class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm mb-4 w-full" required>
             @error('payout_site') <span class="text-red-500 text-sm mb-4">{{ $message }}</span> @enderror
 
             <input type="text" name="poo_rdv_focal" value="{{ old('poo_rdv_focal') }}"
-                placeholder="Enter POO RDV Focal"
-                class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm mb-4 w-full">
+                placeholder="Enter POO RDV Focal" 
+                class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm mb-4 w-full" required>
             @error('poo_rdv_focal') <span class="text-red-500 text-sm mb-4">{{ $message }}</span> @enderror
+
+            <input type="text" name="reason" value="{{ old('reason') }}" :required="entry_type === 'Force Entry'" :disabled="entry_type === 'Crossmatch'"
+                placeholder="Justification for Force Entry" 
+                :class="entry_type === 'Crossmatch' ? 'bg-gray-200 cursor-not-allowed' : ''"
+                class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm mb-4 w-full">
+            @error('reason') <span class="text-red-500 text-sm mb-4">{{ $message }}</span> @enderror
         </div>
 
         <!-- Step 2 -->
         <div x-show="step === 2" x-data="{ hasUploadedFile: {{ session('uploaded_request_file_name') ? 'true' : 'false' }} }"
             class="max-w-2xl mx-auto p-6 bg-white shadow-md rounded-md">
             <h2 class="text-xl font-bold mb-4">Step 2: Import Raw File</h2>
+
+            <!-- Large CSV Icon -->
+            <div class="flex justify-center mb-6">
+                <svg class="w-48 h-48 text-green-600" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M6 2h7l5 5v15a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z"/>
+                    <text x="6" y="17" font-size="6" fill="white">CSV</text>
+                </svg>
+            </div>
 
             <input type="file" name="request" id="request" class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm mb-4 w-full" 
                 :required="step === 2 && !hasUploadedFile">
@@ -149,17 +187,20 @@
         <!-- Step 5 -->
         <div x-show="step === 3">
             <div class="max-w-2xl mx-auto p-6 bg-white shadow-md rounded-md">
-                <h2 class="text-2xl font-semibold text-center mb-6">Review Your Information</h2>
+                <h2 class="text-2xl font-semibold text-center mb-2">Review Your Information</h2>
 
-                <div class="mb-4">
+                <div class="mb-2">
                     <h3 class="text-lg font-medium text-gray-700 mb-2">Step 1 Details</h3>
                     <div class="bg-gray-50 p-4 rounded-md shadow-inner">
+                        <p class="text-gray-600 mb-2"><span class="font-semibold">Processing Type:</span> {{ session('entry_type') ?? 'N/A' }}</p>
+                        <p class="text-gray-600 mb-2"><span class="font-semibold">Payout Type:</span> {{ strtoupper(session('payout_mode')) ?? 'N/A' }}</p>
                         <p class="text-gray-600 mb-2"><span class="font-semibold">Requesting Partner:</span> {{ session('requesting_partner') ?? 'N/A' }}</p>
                         <p class="text-gray-600 mb-2"><span class="font-semibold">Special Disbursing Officer:</span> {{ session('sdo') ?? 'N/A' }}</p>
                         <p class="text-gray-600 mb-2"><span class="font-semibold">Check Number:</span> {{ session('check_number') ?? 'N/A' }}</p>
                         <p class="text-gray-600 mb-2"><span class="font-semibold">Check Date Issued:</span> {{ session('check_date_issued') ?? 'N/A' }}</p>
                         <p class="text-gray-600 mb-2"><span class="font-semibold">Payout Site:</span> {{ session('payout_site') ?? 'N/A' }}</p>
-                        <p class="text-gray-600"><span class="font-semibold">POO RDV Focal:</span> {{ session('poo_rdv_focal') ?? 'N/A' }}</p>
+                        <p class="text-gray-600 mb-2"><span class="font-semibold">POO RDV Focal:</span> {{ session('poo_rdv_focal') ?? 'N/A' }}</p>
+                        <p class="text-gray-600"><span class="font-semibold">Justification:</span> {{ session('reason') ?? 'N/A' }}</p>
                     </div>
                 </div>
 
@@ -214,7 +255,7 @@
         </div>
 
         <!-- Navigation Buttons -->
-        <div class="mt-8 flex justify-between">
+        <div class="mt-4 flex justify-between">
             <button type="button" @click="step--" x-show="step > 1"
                 class="px-4 py-2 bg-gray-500 text-white rounded">Back
             </button>

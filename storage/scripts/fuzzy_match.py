@@ -32,6 +32,7 @@ check_date_issued = sys.argv[12]
 payout_site = sys.argv[13]
 poo_rdv_focal = sys.argv[14]
 payout_mode = sys.argv[15]
+reason = sys.argv[16]
 
 file_name = file_name.strip('"')  # just in case
 
@@ -45,7 +46,7 @@ conn = mysql.connector.connect(
     host="127.0.0.1",
     user="root",
     password="",
-    database="dedup_laravel"
+    database="aicsakap_rdv_db"
 )
 
 if conn.is_connected():
@@ -202,25 +203,15 @@ column_mapping = {
     'CHECK DATE ISSUED': 'check_date_issued',
     'PAYOUT SITE': 'payout_site',
     'POO RDV FOCAL': 'poo_rdv_focal',
+    'PAYOUT MODE': 'payout_mode',
+    'FORCE ENTRY': 'force_entry'
     # Add more mappings as needed
 }
 
 def save_clean_list(row):
     # Start transaction
     try:
-        # conn.start_transaction()
-
-        if program == 'ECT':
-            now = datetime.now().strftime("%Y-%m-%d")
-
-            query = """
-                INSERT INTO ect_clean_list (first_name, middle_name, last_name, extension_name, date_processed) 
-                    VALUES (%s, %s, %s, %s);
-                """
-        
-            cursor.execute(query, (row['FIRST NAME'], row['MIDDLE NAME'], row['LAST NAME'], now,))
-            conn.commit()
-        elif program == 'AICS':
+        if program == 'AICS':
             now = datetime.now().strftime("%m/%d/%Y")
 
             row['DATE PROCESSED'] = now
@@ -295,6 +286,8 @@ def get_initials(province):
 # Function to generate a random code with a random sequence of letters and numbers
 def generate_random_code(existing_codes, province):
     while True:
+        current_date = datetime.now().strftime("%Y%m%d")
+
         # Generate the components
         letters = random.choices(string.ascii_uppercase, k=3)
         numbers = random.choices(string.digits, k=2)
@@ -306,7 +299,7 @@ def generate_random_code(existing_codes, province):
         if province == '' or province is None:
             control_number = f"RDV-{base_code}"
         else:
-            control_number = f"{province}-{base_code}"
+            control_number = f"{province}-{current_date}-{base_code}"
         
         # Ensure uniqueness
         if control_number not in existing_codes and control_number not in clean_list_df['control_number']:
@@ -358,6 +351,7 @@ df['CHECK DATE ISSUED'] = check_date_issued
 df['PAYOUT SITE'] = payout_site
 df['POO RDV FOCAL'] = poo_rdv_focal
 df['PAYOUT MODE'] = payout_mode
+df['FORCE ENTRY'] = 'Yes' if file_process == 'Force Entry' else 'No'
 
 master_list = pd.concat([master_list, df], ignore_index=True)
     
@@ -735,7 +729,7 @@ index = -1
 for row, (index2, row2) in zip(valid_recs[['FIRST NAME', 'MIDDLE NAME', 'LAST NAME', 'EXTENSION NAME', 'Full Name', 'Full Name 2', 'Full Name 3', 'File Source', 'Birthday', 'BIRTH DAY', 'BIRTH MONTH', 'BIRTH YEAR']].to_numpy(), valid_recs.iterrows()):
     index += 1
 
-    if usertype != 'grievance_officer' and file_process == 'RDV':
+    if usertype != 'grievance_officer' and file_process == 'Crossmatch':
         if not db_df.empty:
             token_sort_match(row)
 
@@ -813,15 +807,15 @@ for item in file_sources:
 
     clean_df.to_csv(no_match_file_path, index=False, encoding='utf-8-sig')
 
-if file_process == 'FORCE_ENTRY':    
+if file_process == 'Force Entry':    
     try:
         df_rows = df.shape[0]
         query = """
-                INSERT INTO import_force_entry_files (file_name, total_forced_entries, imported_by) 
-                        VALUES (%s, %s, %s);
+                INSERT INTO import_force_entry_files (file_name, total_forced_entries, reason, imported_by) 
+                        VALUES (%s, %s, %s, %s);
                 """
             
-        cursor.execute(query, (request_file, df_rows, name,))
+        cursor.execute(query, (request_file, df_rows, reason, name,))
         conn.commit()
 
     except Error as e:

@@ -5,7 +5,7 @@
         </h2>
     </x-slot>
 
-    <div class="py-12">
+    <div class="py-6">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
                 <div class="p-6 text-gray-900">
@@ -45,7 +45,6 @@
                         <table class="w-full border border-gray-200 rounded-lg overflow-hidden">
                             <thead class="bg-gray-100">
                                 <tr>
-                                    <th class="px-4 py-2 text-left">ID</th>
                                     <th class="px-4 py-2 text-left">Control #</th>
                                     <th class="px-4 py-2 text-left w-64">Name</th>
                                     <th class="px-4 py-2 text-left">Birthday</th>
@@ -57,7 +56,6 @@
                             <tbody class="bg-white">
                                 @forelse ($served_benes as $bene)
                                     <tr class="border-t hover:bg-gray-50">
-                                        <td class="px-4 py-2">{{ $bene->id }}</td>
                                         <td class="px-4 py-2">{{ $bene->control_number }}</td>
                                         <td class="px-4 py-2">{{ $bene->first_name }} {{ $bene->middle_name }} {{ $bene->last_name }} {{ $bene->extension_name }}</td>
                                         <td class="px-4 py-2">{{ $bene->birth_month }}/{{ $bene->birth_day }}/{{ $bene->birth_year }}</td>

@@ -59,6 +59,8 @@ class MultiStep extends Controller
             $request->session()->put('check_date_issued', $request->input('check_date_issued'));
             $request->session()->put('payout_site', $request->input('payout_site'));
             $request->session()->put('poo_rdv_focal', $request->input('poo_rdv_focal'));
+            $request->session()->put('entry_type', $request->input('entry_type'));
+            $request->session()->put('reason', $request->input('reason'));
         }
         
         // Save the uploaded file if this is the file step (e.g., Step 2)
@@ -101,6 +103,8 @@ class MultiStep extends Controller
             $check_date_issued = escapeshellarg(session('check_date_issued'));
             $payout_site = escapeshellarg(session('payout_site'));
             $poo_rdv_focal = escapeshellarg(session('poo_rdv_focal'));
+            $entry_type = escapeshellarg(session('entry_type'));
+            $reason = escapeshellarg(session('reason'));
             
             $script_path = base_path('storage\scripts\fuzzy_match.py');
 
@@ -121,7 +125,6 @@ class MultiStep extends Controller
                 $pythonPath = $paths[0] ?? null;
                 // dd($pythonPath);
 
-                $file = "RDV";
                 $args = array_map(fn($arg) => trim($arg, "\""), [
                     $pythonPath,
                     $script_path,
@@ -131,7 +134,7 @@ class MultiStep extends Controller
                     $user_type,
                     $poo,
                     $documentsPath,
-                    $file,
+                    $entry_type,
                     $name,
                     $requesting_partner,
                     $sdo,
@@ -139,7 +142,8 @@ class MultiStep extends Controller
                     $check_date_issued,
                     $payout_site,
                     $poo_rdv_focal,
-                    $payout_mode
+                    $payout_mode,
+                    $reason
                 ]);
 
                 $process = new Process($args);

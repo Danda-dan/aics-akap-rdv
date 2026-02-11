@@ -24,6 +24,7 @@ class CleanListController extends Controller
                 'payout_site',
                 'sdo',
                 'poo_rdv_focal',
+                'force_entry',
                 'date_processed',
                 'created_at'
             );
