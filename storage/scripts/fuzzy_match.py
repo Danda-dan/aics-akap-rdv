@@ -64,20 +64,7 @@ if conn.is_connected():
 
     cursor = conn.cursor()
 
-    if program == 'ECT':
-        query = """
-        SELECT * FROM ect_clean_list;
-        """
-
-        cursor.execute(query)
-        clean_list = cursor.fetchall()
-        clean_list_columns = [desc[0] for desc in cursor.description]
-
-        cursor.execute("SELECT * FROM ect_served_database;")
-        served_db = cursor.fetchall()
-        served_db_columns = [desc[0] for desc in cursor.description]
-
-    elif program == 'AICS':
+    if program == 'AICS':
         end_date = datetime.now()
         start_date = end_date - timedelta(days=90)
 
@@ -261,27 +248,6 @@ def is_valid_date(date_series):
         return True
     except (ValueError, TypeError):
         return False
-    
-# Function to extract initials from a full name
-def get_initials(province):
-    parts = province.split()
-    if province == 'DAVAO DEL SUR':
-        return 'DDS'
-    elif province == 'DAVAO DEL NORTE':
-        return 'DDN'
-    elif province == 'DAVAO DE ORO':
-        return 'DDO'
-    elif province == 'DAVAO ORIENTAL':
-        return 'DOR'
-    elif province == 'DAVAO OCCIDENTAL':
-        return 'DOC'
-    elif len(parts) == 3:
-        return parts[0][0].upper() + parts[1][0].upper() + parts[2][0].upper()  # First letter of provinces
-    elif len(parts) == 2:
-        return parts[0][0].upper() + parts[1][0].upper()  # First letter of provinces
-    elif len(parts) == 1:
-        return parts[0][0].upper()  # Only one province part
-    return 'RDV'  # Empty province
 
 # Function to generate a random code with a random sequence of letters and numbers
 def generate_random_code(existing_codes, province):

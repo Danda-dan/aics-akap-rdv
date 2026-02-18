@@ -1,15 +1,12 @@
 <x-app-layout>
-    <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-            {{ __('Clean List/No Match Beneficiaries') }}
-        </h2>
-    </x-slot>
-
     <div class="py-6">
         <div class="max-w-full mx-auto sm:px-6 lg:px-8">
             <div class="bg-white min-h-96 overflow-y-auto shadow-sm sm:rounded-lg">
                 <div class="p-6 text-gray-900">
-                    <form method="GET" class="mb-4 flex gap-2">
+                    <h2 class="font-semibold text-xl text-gray-800 leading-tight">
+                        {{ __('Clean List/No Match Beneficiaries') }}
+                    </h2>
+                    <form method="GET" class="mt-5 mb-4 flex gap-2">
                         <input
                             type="text"
                             name="search"
