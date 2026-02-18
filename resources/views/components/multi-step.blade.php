@@ -14,7 +14,7 @@
     </div>
 
     <!-- Form Steps -->
-    <form x-data="{ isLoading: false, onStep: 3, mode: '{{ old('mode', 'sdo') }}', entry_type: '{{ old('entry_type', 'Crossmatch') }}' }" 
+    <form x-data="{ isLoading: false, onStep: 3, mode: '{{ old('mode', '') }}', entry_type: '{{ old('entry_type', 'Crossmatch') }}' }" 
         x-init="$watch('isLoading', value => window.scriptRunning = value)" 
         x-on:submit="if (step === onStep) { isLoading = true }"
         method="POST" action="{{ route('form.submit') }}" enctype="multipart/form-data">

@@ -17,9 +17,9 @@ Route::get('/home', function () {
     return view('dashboard');
 })->middleware(['auth', 'verified', 'prevent-back-history'])->name('home');
 
-Route::get('/import-served', function () {
-    return view('import-served');
-})->middleware(['auth', 'verified', 'prevent-back-history'])->name('import-served');
+Route::get('/import-files', function () {
+    return view('import-files');
+})->middleware(['auth', 'verified', 'prevent-back-history'])->name('import-files');
 
 Route::get('/no-show', function () {
     return view('no-show');

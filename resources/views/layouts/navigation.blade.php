@@ -19,7 +19,7 @@
 
                 <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
                     <x-nav-link :href="route('served.benes')" :active="request()->routeIs('served.benes')">
-                        {{ __('Served Beneficiaries') }}
+                        {{ __('Served List') }}
                     </x-nav-link>
                 </div>
 
@@ -30,22 +30,10 @@
                 </div>
 
                 <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
-                    <x-nav-link :href="route('import-served')" :active="request()->routeIs('import-served')">
-                        {{ __('Import Served') }}
+                    <x-nav-link :href="route('import-files')" :active="request()->routeIs('import-files')">
+                        {{ __('Import Files') }}
                     </x-nav-link>
                 </div>
-
-                <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
-                    <x-nav-link :href="route('no-show')" :active="request()->routeIs('no-show')">
-                        {{ __('No Show') }}
-                    </x-nav-link>
-                </div>
-
-                <!-- <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
-                    <x-nav-link :href="route('force-entry')" :active="request()->routeIs('force-entry')">
-                        {{ __('Force Entry') }}
-                    </x-nav-link>
-                </div> -->
             </div>
 
             <!-- Settings Dropdown -->

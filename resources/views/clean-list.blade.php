@@ -6,8 +6,8 @@
     </x-slot>
 
     <div class="py-6">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
+        <div class="max-w-full mx-auto sm:px-6 lg:px-8">
+            <div class="bg-white min-h-96 overflow-y-auto shadow-sm sm:rounded-lg">
                 <div class="p-6 text-gray-900">
                     <form method="GET" class="mb-4 flex gap-2">
                         <input
@@ -41,7 +41,7 @@
                         </a>
                     </form>
 
-                    <div class="w-full max-w-7xl mx-auto">
+                    <div class="w-full mx-auto">
                         <table class="w-full border border-gray-200 rounded-lg overflow-hidden">
                             <thead class="bg-gray-100">
                                 <tr>

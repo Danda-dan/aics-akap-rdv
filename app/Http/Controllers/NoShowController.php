@@ -54,7 +54,7 @@ class NoShowController extends Controller
                 $this->clearTemporaryFile();
                 
                 if(isset($data['message']) && $data["message"]){
-                    return redirect()->route('no-show')->with('success', 'No Show Clients removed from the clean list successfully!');
+                    return redirect()->route('import-files')->with('success', 'No Show Clients removed from the clean list successfully!');
 
                 } elseif(isset($data['message']) && $data["message"] == false) {
                     $msg = $data['missing_cols'] ?? "";

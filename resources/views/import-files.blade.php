@@ -1,0 +1,162 @@
+<x-app-layout>
+    <x-slot name="header">
+        <h2 class="font-semibold text-xl text-gray-800 leading-tight">
+            {{ __('Uploading of Served and Unclaimed Beneficiaries') }}
+        </h2>
+    </x-slot>
+
+    <div class="py-6">
+        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+            <div class="bg-white shadow-sm sm:rounded-lg">
+                <div class="p-6 text-gray-900">
+                    <div class="w-full max-w-2xl mx-auto mt-10">
+                        <form x-data="{ isLoading: false }" x-on:submit="if(!isLoading){ isLoading = true }"
+                            method="POST" action="{{ route('form.import') }}" enctype="multipart/form-data">
+                            @csrf
+
+                            <input type="hidden" name="current_step" value="sample">
+
+                            <div class="max-w-2xl mx-auto p-6 bg-white shadow-md rounded-md">
+                                <h2 class="text-xl font-bold mb-4">Import Served Database File</h2>
+
+                                <input type="file" name="served" id="served" class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm mb-4 w-full">
+                            
+                                @error('served') <span class="text-red-500 text-sm mb-4">{{ $message }}</span> @enderror
+
+                                <div class="mt-4 flex justify-between">
+                                    <button type="submit" class="px-4 py-2 bg-blue-500 text-white rounded">
+                                        <svg class="w-5 h-5 mr-2 inline-block" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2M12 12v8m0-8l-4 4m4-4l4 4M12 4v8"/>
+                                        </svg>
+                                        Import Served List
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Loading Modal -->
+                            <div 
+                                x-show="isLoading" 
+                                style="display: none;" 
+                                class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50"
+                                x-cloak
+                            >
+                                <div class="bg-white p-6 rounded shadow-lg text-center">
+                                    <p class="text-lg font-semibold text-gray-700">Processing your request, please wait...</p>
+                                    <!-- Optional spinner -->
+                                    <div class="mt-4 flex justify-center">
+                                        <svg class="animate-spin h-6 w-6 text-blue-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+                                        </svg>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div x-data="{ show: false, message: '', type: 'success' }"
+                                x-show="show"
+                                x-init="
+                                    @if (session('success'))
+                                        show = true;
+                                        message = '{{ session('success') }}';
+                                        type = 'success';
+                                        setTimeout(() => show = false, 8000);
+                                    @elseif (session('error'))
+                                        show = true;
+                                        message = '{{ session('error') }}';
+                                        type = 'error';
+                                        setTimeout(() => show = false, 8000);
+                                    @endif
+                                "
+                                class="fixed inset-0 flex items-center justify-center text-black px-4 py-3 rounded-lg max-w-sm w-full mx-auto">
+                                <div class="flex items-center bg-white border border-gray-300 rounded-lg p-4 shadow-lg">
+                                    <svg x-show="type === 'success'" class="w-6 h-6 mr-2 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M5 13l4 4L19 7"></path>
+                                    </svg>
+                                    <svg x-show="type === 'error'" class="w-6 h-6 mr-2 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M6 18L18 6M6 6l12 12"></path>
+                                    </svg>
+                                    <span class="text-black font-semibold" x-text="message"></span>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+
+                    <div class="w-full max-w-2xl mx-auto mt-10 mb-12">
+                        <form x-data="{ isLoading: false }" x-on:submit="if(!isLoading){ isLoading = true }"
+                            method="POST" action="{{ route('file.import') }}" enctype="multipart/form-data">
+                            @csrf
+
+                            <input type="hidden" name="current_step" value="sample">
+
+                            <div class="max-w-2xl mx-auto p-6 bg-white shadow-md rounded-md">
+                                <h2 class="text-xl font-bold mb-4">Import No Show List</h2>
+
+                                <input type="file" name="noShow" id="noShow" class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm mb-4 w-full">
+                            
+                                @error('noShow') <span class="text-red-500 text-sm mb-4">{{ $message }}</span> @enderror
+
+                                <div class="mt-4 flex justify-between">
+                                    <button type="submit" class="px-4 py-2 bg-blue-500 text-white rounded">
+                                        <svg class="w-5 h-5 mr-2 inline-block" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2M12 12v8m0-8l-4 4m4-4l4 4M12 4v8"/>
+                                        </svg>Import No Show List
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Loading Modal -->
+                            <div 
+                                x-show="isLoading" 
+                                style="display: none;" 
+                                class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50"
+                                x-cloak
+                            >
+                                <div class="bg-white p-6 rounded shadow-lg text-center">
+                                    <p class="text-lg font-semibold text-gray-700">Processing your request, please wait...</p>
+                                    <!-- Optional spinner -->
+                                    <div class="mt-4 flex justify-center">
+                                        <svg class="animate-spin h-6 w-6 text-blue-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+                                        </svg>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div x-data="{ show: false, message: '', type: 'success' }"
+                                x-show="show"
+                                x-init="
+                                    @if (session('success'))
+                                        show = true;
+                                        message = '{{ session('success') }}';
+                                        type = 'success';
+                                        setTimeout(() => show = false, 8000);
+                                    @elseif (session('error'))
+                                        show = true;
+                                        message = '{{ session('error') }}';
+                                        type = 'error';
+                                        setTimeout(() => show = false, 8000);
+                                    @endif
+                                "
+                                class="fixed inset-0 flex items-center justify-center text-black px-4 py-3 rounded-lg max-w-sm w-full mx-auto">
+                                <div class="flex items-center bg-white border border-gray-300 rounded-lg p-4 shadow-lg">
+                                    <svg x-show="type === 'success'" class="w-6 h-6 mr-2 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M5 13l4 4L19 7"></path>
+                                    </svg>
+                                    <svg x-show="type === 'error'" class="w-6 h-6 mr-2 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M6 18L18 6M6 6l12 12"></path>
+                                    </svg>
+                                    <span class="text-black font-semibold" x-text="message"></span>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</x-app-layout>

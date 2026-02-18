@@ -61,7 +61,7 @@ class ImportServed extends Controller
                 if(isset($data['message']) && $data["message"]){
                     // Return a success response
                     // dd($data);
-                    return redirect()->route('import-served')->with('success', 'Data saved successfully!');
+                    return redirect()->route('import-files')->with('success', 'Data saved successfully!');
                 } elseif (isset($data['message']) && !$data["message"]) {
                     if(isset($data['invalid_date']) && $data["invalid_date"]){
                         $invalidRows = $data['invalid_rows'] ?? [];
