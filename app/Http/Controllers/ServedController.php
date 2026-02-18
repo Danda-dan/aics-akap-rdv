@@ -9,7 +9,7 @@ class ServedController extends Controller
 {
     public function index(Request $request)
     {
-        $query = DB::table('aics_served_database2')
+        $query = DB::table('aics_served_database')
             ->select(
                 'id',
                 'control_number',
