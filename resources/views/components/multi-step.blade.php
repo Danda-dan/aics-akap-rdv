@@ -14,17 +14,15 @@
     </div>
 
     <!-- Form Steps -->
-    <form x-data="{ isLoading: false, onStep: 3, mode: '{{ old('mode', 'sdo') }}', entry_type: '{{ old('entry_type', 'Crossmatch') }}' }" x-init="$watch('isLoading', value => window.scriptRunning = value)" 
+    <form x-data="{ isLoading: false, onStep: 3, mode: '{{ old('mode', 'sdo') }}', entry_type: '{{ old('entry_type', 'Crossmatch') }}' }" 
+        x-init="$watch('isLoading', value => window.scriptRunning = value)" 
         x-on:submit="if (step === onStep) { isLoading = true }"
         method="POST" action="{{ route('form.submit') }}" enctype="multipart/form-data">
         @csrf
 
         <input type="hidden" name="current_step" x-bind:value="step">
         <!-- Step 1 -->
-        <div 
-            x-show="step === 1"
-            class="max-w-2xl mx-auto p-6 bg-white shadow-md rounded-md"
-        >
+        <div x-show="step === 1" class="max-w-2xl mx-auto p-6 bg-white shadow-md rounded-md">
             <!-- Header + Radio Buttons -->
             <div class="flex items-center justify-between mb-4">
                 <h2 class="text-xl font-bold">Step 1: Initial Details</h2>
@@ -156,35 +154,6 @@
         </div>
 
         <!-- Step 3 -->
-        <div x-show="step === 333" x-data="{ isChecked: false, hasUploadedFile: {{ session('uploaded_clean_file_name') ? 'true' : 'false' }} }"
-            class="max-w-2xl mx-auto p-6 bg-white shadow-md rounded-md">
-            <h2 class="text-xl font-bold mb-4">Step 3: Filter Clean List by Date Range</h2>
-            
-            <div class="mb-4">
-                <label for="start_date" class="block text-sm font-medium text-gray-600 mb-1">Start Date:</label>
-                <input 
-                    type="date" 
-                    id="start_date" 
-                    name="start_date" 
-                    value="{{ session('start_date') }}" 
-                    class="w-full border border-gray-300 rounded-md px-3 py-2 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                >
-            </div>
-            <div class="mb-4">
-                <label for="end_date" class="block text-sm font-medium text-gray-600 mb-1">End Date:</label>
-                <input 
-                    type="date" 
-                    id="end_date" 
-                    name="end_date" 
-                    value="{{ session('end_date') }}" 
-                    class="w-full border border-gray-300 rounded-md px-3 py-2 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                >
-            </div>
-                
-            @error('clean') <span class="text-red-500 text-sm mb-4">{{ $message }}</span> @enderror
-        </div>
-
-        <!-- Step 5 -->
         <div x-show="step === 3">
             <div class="max-w-2xl mx-auto p-6 bg-white shadow-md rounded-md">
                 <h2 class="text-2xl font-semibold text-center mb-2">Review Your Information</h2>
@@ -225,7 +194,7 @@
             </div>
         </div>
 
-        <!-- Step 6 -->
+        <!-- Step 4 -->
         <div x-show="step === 4">
             <div class="max-w-2xl mx-auto p-6 bg-white shadow-md rounded-md">
                 <h2 class="text-2xl font-semibold text-center mb-6">Done processing</h2>

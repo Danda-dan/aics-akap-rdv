@@ -89,8 +89,12 @@ if missing_cols:
 for index, row in df.iterrows():
 
     try:
-        query = "DELETE FROM aics_clean_list WHERE control_number = %s"
+        query = "INSERT INTO aics_no_show_list SELECT * FROM aics_clean_list WHERE control_number = %s"
         cur.execute(query, (row['CONTROL NUMBER'],))
+        conn.commit()
+
+        del_query = "DELETE FROM aics_clean_list WHERE control_number = %s"
+        cur.execute(del_query, (row['CONTROL NUMBER'],))
         conn.commit()
 
     except Error as e:
