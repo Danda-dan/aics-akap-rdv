@@ -43,7 +43,7 @@
                             <thead class="bg-gray-100">
                                 <tr>
                                     <th class="px-4 py-2 text-left">Control #</th>
-                                    <th class="px-4 py-2 text-left w-64">Name</th>
+                                    <th class="px-4 py-2 text-left">Name</th>
                                     <th class="px-4 py-2 text-left">Birthday</th>
                                     <th class="px-4 py-2 text-left">Date Served</th>
                                     <th class="px-4 py-2 text-left">Location</th>
