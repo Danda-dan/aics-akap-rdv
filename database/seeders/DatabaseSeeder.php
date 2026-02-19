@@ -18,12 +18,12 @@ class DatabaseSeeder extends Seeder
         // User::factory(10)->create();
 
         User::factory()->create([
-            'program_id' => 3,
+            'program_id' => 2,
             'position_id' => 1,
             'usertype' => '',
             'poo' => '',
-            'name' => 'SLP User',
-            'email' => 'slp@user.com',
+            'name' => 'RDV Focal2',
+            'email' => 'rdv_focal2@dswd.gov.ph',
             'password' => Hash::make('password'),
             'remember_token' => Str::random(60),
         ]);

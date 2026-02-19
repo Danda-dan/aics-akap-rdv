@@ -756,7 +756,7 @@ for item in file_sources:
     dup_df_file = fullname_list[fullname_list['File source 1'] == item] if not fullname_list.empty else fullname_list
     served_df_file = token_matching[token_matching['File source 1'] == item] if not token_matching.empty else token_matching
 
-    result_file_path = os.path.join(documents_path, f'Record verification for {item} {now}.xlsx')
+    result_file_path = os.path.join(documents_path, f'Record verification for {item}.xlsx')
 
     with pd.ExcelWriter(result_file_path) as writer:  
         master_df_file.to_excel(writer, sheet_name='Raw List', index=False)
@@ -767,7 +767,7 @@ for item in file_sources:
         dup_df_file.to_excel(writer, sheet_name='Duplicates', index=False)
         served_df_file.to_excel(writer, sheet_name='Served', index=False)
 
-    no_match_file_path = os.path.join(documents_path, f'No Match for {item} {now}.csv')
+    no_match_file_path = os.path.join(documents_path, f'No Match for {item}.csv')
     clean_df['DATETIME PROCESSED'] = datetime.now().strftime("%d-%m-%Y %I:%M:%S %p")
     clean_df = clean_df[['CONTROL NUMBER', 'LAST NAME', 'FIRST NAME', 'MIDDLE NAME', 'EXTENSION NAME', 'BIRTH DAY', 'BIRTH MONTH', 'BIRTH YEAR', 'SEX', 'CIVIL STATUS', 'OCCUPATION', 'MONTHLY SALARY', 'CATEGORY', 'SUB-CATEGORY', 'CONTACT NUMBER', 'PUROK', 'BARANGAY', 'CITY/MUNICIPALITY', 'PROVINCE', 'TYPE OF ASSISTANCE', 'AMOUNT', 'CHARGING', 'REQUESTING PARTNER', 'SDO', 'CHECK NUMBER', 'CHECK DATE ISSUED', 'PAYOUT SITE', 'POO RDV FOCAL', 'DATETIME PROCESSED']]
 
@@ -801,10 +801,12 @@ result = {
     "clean_list": clean_df.shape[0],
     "invalid_list": invalid_df_file.shape[0],
     "duplicate_list": dup_df_file.shape[0],
-    "served_list": served_df_file.shape[0]
+    "served_list": served_df_file.shape[0],
+    "generated_excel": result_file_path,
+    "generated_csv": no_match_file_path
 }
 
 print(json.dumps(result))
-os.startfile(documents_path)
+# os.startfile(documents_path)
 
 sys.exit()

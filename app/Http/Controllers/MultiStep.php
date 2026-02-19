@@ -75,7 +75,7 @@ class MultiStep extends Controller
             $current_date = date('M-d-Y');
 
             // Path to your template
-            $templatePath = public_path('templates\Reporting Template.docx');
+            $templatePath = public_path('templates/Reporting Template.docx');
 
             // Create a new TemplateProcessor instance
             $templateProcessor = new TemplateProcessor($templatePath);
@@ -109,7 +109,8 @@ class MultiStep extends Controller
             $script_path = base_path('storage\scripts\fuzzy_match.py');
 
             // Get the path to the Documents folder
-            $documentsPath = rtrim(getenv('USERPROFILE') ?: getenv('HOME'), DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . 'Documents';
+            // $documentsPath = rtrim(getenv('USERPROFILE') ?: getenv('HOME'), DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . 'Documents';
+            $documentsPath = base_path('storage\app\private\generated');
 
             set_time_limit(0); // Unlimited execution time
 
@@ -155,6 +156,7 @@ class MultiStep extends Controller
                 if (!$process->isSuccessful()) {
                     Log::error("Error from Python script: " . $process->getErrorOutput());
                     throw new \RuntimeException($process->getErrorOutput());
+                    // return back()->with('error', 'Something went wrong.');
                 }
 
                 $output = $process->getOutput();
@@ -182,8 +184,9 @@ class MultiStep extends Controller
             }
             
             if ($data) {
-                $currentDateTime = date('m-d-Y His');
-                $fileName = "RDV Summary of Results {$currentDateTime}.docx";
+                $currentDateTime = now()->timezone('Asia/Manila')->format('m-d-Y H-i-s');
+                $fileName = "RDV Summary of Results.docx";
+                $outputPath = $documentsPath . DIRECTORY_SEPARATOR . $fileName;
                 
                 $total = $data['duplicate_list'] + $data['invalid_list'] + $data['served_list'];
                 $templateProcessor->setValue('possible_duplicates', $data['duplicate_list'] > 0 ? $data['duplicate_list'] : 'None');
@@ -197,34 +200,14 @@ class MultiStep extends Controller
                 $request->session()->put('invalid_list', $data['invalid_list']);
                 $request->session()->put('duplicate_list', $data['duplicate_list']);
                 $request->session()->put('served_list', $data['served_list']);
-
-                // Output file path in the Documents folder
-                $outputPath = $documentsPath . DIRECTORY_SEPARATOR . $fileName;
+                $request->session()->put('generated_excel', $data['generated_excel']);
+                $request->session()->put('generated_csv', $data['generated_csv']);
+                $request->session()->put('generated_docx', $outputPath);
 
                 // Save the file
                 $templateProcessor->saveAs($outputPath);
 
                 try {
-                    if ($program == 'ECT') {
-                        
-                        DB::table('ect_requests')->insert([
-                            'stakeholder' => session('stakeholder'),
-                            'focal_person' => session('focal_person'),
-                            'file_name' => session('uploaded_request_file_name'),
-                            'date_received' => date('Y-m-d'),
-                            'contact_person' => session('contact_person'),
-                            'contact_email' => session('contact_email'),
-                            'contact_number' => session('contact_number'),
-                            'raw_list' => $data['master_list'],
-                            'possible_duplicates' => $data['duplicate_list'],
-                            'invalid_records' => $data['invalid_list'],
-                            'served_individuals' => $data['served_list'],
-                            'total_valid' => $data['clean_list'],
-                            'prepared_by' => $request->user()->name,
-                            'division_chief' => $division_chief
-                        ]);
-                    }
-
                     if ($program == 'AICS') {
                         
                         DB::table('aics_requests')->insert([
@@ -251,7 +234,7 @@ class MultiStep extends Controller
                     DB::rollback();
                     return back()->with('error', 'Database error');
                 }
-
+                
                 return redirect()->back()
                     ->with('step', $nextStep)
                     ->with('master_list', $data['master_list'])
@@ -271,7 +254,9 @@ class MultiStep extends Controller
         }
 
         // $this->clearTemporaryFile();
-        return redirect()->back()->with('success', 'Result was saved successfully.');
+        return redirect()->back()
+            ->with('success', 'Result was saved successfully.')
+            ->with('download_file', true);
     }
 
     private function getValidationRulesForStep($request, $step)
@@ -333,71 +318,42 @@ class MultiStep extends Controller
         abort(404); // File not found
     }
 
-    public function stopDeduplication()
-    {
-        $script_path = base_path('storage/scripts/fuzzy_match.py');
+    public function downloadFiles(){
+        $timestamp = now()->timezone('Asia/Manila')->format('m-d-Y H-i-s');
 
-        // dd("Stopping deduplication process...");
-        // Log::error("Entered stopDeduplication.");
-        $args = array_map(fn($arg) => trim($arg, "\""), [
-            'python',
-            $script_path,
-            '',
-            '',
-            '',
-            '',
-            '',
-            ''
-        ]);
+        $zipFileName = "RDV Result {$timestamp}.zip";
+        $zipPath = storage_path("app/private/generated/{$zipFileName}");
 
-        $process = new Process($args);
-        $process->setTimeout(null);
-        $process->run();
+        $zip = new \ZipArchive;
 
-        if (!$process->isSuccessful()) {
-            Log::error("Error from Python script: " . $process->getErrorOutput());
-            throw new \RuntimeException($process->getErrorOutput());
+        $files = [
+            session('generated_excel'),
+            session('generated_csv'),
+            session('generated_docx')
+        ];
+
+        if ($zip->open($zipPath, \ZipArchive::CREATE | \ZipArchive::OVERWRITE)) {
+            foreach ($files as $file) {
+                if (file_exists($file)) {
+                    $zip->addFile($file, basename($file));
+                }
+            }
+            $zip->close();
+
+            foreach ($files as $file) {
+                if (file_exists($file)) {
+                    unlink($file);
+                }
+            }
+
         }
 
-        $output = $process->getOutput();
+        $fullPath = 'generated/' . $zipFileName;
 
-        if ($output === null) {
-            Log::error("Python script execution failed.");
-            // return back()->with('error', 'Python script execution failed.');
-            // return back()->with('error', 'Something went wrong.');
-            return response()->json(['error' => 'Something went wrong.']);
+        if (Storage::exists($fullPath)) {
+            return Storage::download($fullPath);
         }
 
-        $data = json_decode($output, true);
-
-        if (!$data || $data === null) {
-            Log::error("Invalid JSON response from Python script: " . $output);
-
-            return response()->json(['error' => 'Invalid response from the Python script.']);
-        }
-    
-        if(isset($data['status']) && $data['status'] == 'error'){
-            // dd($data);
-            return back()->with('error', $data['message']);
-        }
-
-        if ($data) {
-            return response()->json(['error' => 'Deduplication process has been stopped successfully!']);
-        }
-
-        return response()->json(['status' => 'no-process']);
+        abort(404); // File not found
     }
-
-    public function checkDeduplicationStatus()
-    {
-        $file = storage_path('app/output.json');
-        
-        if (file_exists($file)) {
-            $data = json_decode(file_get_contents($file), true);
-            return response()->json($data);
-        }
-
-        return response()->json(['status' => 'processing']);
-    }
-
 }

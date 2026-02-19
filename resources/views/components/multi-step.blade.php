@@ -76,7 +76,7 @@
                 placeholder="Enter SDO"
                 :required="mode === 'sdo'"
                 :disabled="mode === 'hybrid'"
-                :class="mode === 'hybrid' ? 'bg-gray-200 cursor-not-allowed' : ''"
+                :class="[mode === 'hybrid' ? 'bg-gray-200 cursor-not-allowed' : '']"
                 class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm mb-4 w-full">
             @error('sdo') <span class="text-red-500 text-sm mb-4">{{ $message }}</span> @enderror
 
@@ -84,7 +84,7 @@
                 placeholder="Enter Check Number"
                 :required="mode === 'sdo'"
                 :disabled="mode === 'hybrid'"
-                :class="mode === 'hybrid' ? 'bg-gray-200 cursor-not-allowed' : ''"
+                :class="[mode === 'hybrid' ? 'bg-gray-200 cursor-not-allowed' : '']"
                 class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm mb-4 w-full">
             @error('check_number') <span class="text-red-500 text-sm mb-4">{{ $message }}</span> @enderror
 
@@ -101,7 +101,7 @@
                     value="{{ old('check_date_issued') }}"
                     :required="mode === 'sdo'"
                     :disabled="mode === 'hybrid'"
-                    :class="mode === 'hybrid' ? 'bg-gray-200 cursor-not-allowed' : ''"
+                    :class="[mode === 'hybrid' ? 'bg-gray-200 cursor-not-allowed' : '']"
                     class="flex-1 border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm"
                 >
             </div>
@@ -124,7 +124,7 @@
 
             <input type="text" name="reason" value="{{ old('reason') }}" :required="entry_type === 'Force Entry'" :disabled="entry_type === 'Crossmatch'"
                 placeholder="Justification for Force Entry" 
-                :class="entry_type === 'Crossmatch' ? 'bg-gray-200 cursor-not-allowed' : ''"
+                :class="[entry_type === 'Crossmatch' ? 'bg-gray-200 cursor-not-allowed' : '']"
                 class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm mb-4 w-full">
             @error('reason') <span class="text-red-500 text-sm mb-4">{{ $message }}</span> @enderror
         </div>
@@ -235,7 +235,7 @@
             </button>
             
             <button type="submit" x-show="step === maxSteps"
-                class="px-4 py-2 bg-green-500 text-white rounded">Save
+                class="px-4 py-2 bg-green-500 text-white rounded">Download & Save
             </button>
         </div>
 
@@ -305,3 +305,14 @@
         }
     });
 </script>
+@if(session('download_file'))
+<script>
+    window.onload = function() {
+        window.open("{{ route('download.files') }}", "_blank");
+
+        setTimeout(function() {
+            window.location.href = "{{ route('home') }}";
+        }, 1000);
+    }
+</script>
+@endif
