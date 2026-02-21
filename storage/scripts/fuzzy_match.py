@@ -34,7 +34,17 @@ poo_rdv_focal = sys.argv[14]
 payout_mode = sys.argv[15]
 reason = sys.argv[16]
 
-file_name = file_name.strip('"')  # just in case
+file_name = file_name.strip('"').replace("'", "")  # just in case
+file_process = file_process.strip('"').replace("'", "")  
+request_file = request_file.strip('"').replace("'", "")  
+requesting_partner = requesting_partner.strip('"').replace("'", "")  
+sdo = sdo.strip('"').replace("'", "")  
+check_number = check_number.strip('"').replace("'", "")  
+check_date_issued = check_date_issued.strip('"').replace("'", "")  
+payout_site = payout_site.strip('"').replace("'", "")  
+poo_rdv_focal = poo_rdv_focal.strip('"').replace("'", "")  
+payout_mode = payout_mode.strip('"').replace("'", "")  
+reason = reason.strip('"').replace("'", "")  
 
 clean_list = []
 served_db= []
