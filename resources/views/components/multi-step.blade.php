@@ -76,16 +76,16 @@
                 placeholder="Enter SDO"
                 :required="mode === 'sdo'"
                 :disabled="mode === 'hybrid'"
-                :class="[mode === 'hybrid' ? 'bg-gray-200 cursor-not-allowed' : '']"
-                class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm mb-4 w-full">
+                :class="[mode === 'hybrid' ? 'bg-gray-200 border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm mb-4 w-full cursor-not-allowed' : 
+                'border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm mb-4 w-full']">
             @error('sdo') <span class="text-red-500 text-sm mb-4">{{ $message }}</span> @enderror
 
             <input type="text" name="check_number" value="{{ old('check_number') }}"
                 placeholder="Enter Check Number"
                 :required="mode === 'sdo'"
                 :disabled="mode === 'hybrid'"
-                :class="[mode === 'hybrid' ? 'bg-gray-200 cursor-not-allowed' : '']"
-                class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm mb-4 w-full">
+                :class="[mode === 'hybrid' ? 'bg-gray-200 border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm mb-4 w-full cursor-not-allowed' : 
+                'border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm mb-4 w-full']">
             @error('check_number') <span class="text-red-500 text-sm mb-4">{{ $message }}</span> @enderror
 
             <div class="mb-4 flex items-center gap-4">
@@ -101,8 +101,8 @@
                     value="{{ old('check_date_issued') }}"
                     :required="mode === 'sdo'"
                     :disabled="mode === 'hybrid'"
-                    :class="[mode === 'hybrid' ? 'bg-gray-200 cursor-not-allowed' : '']"
-                    class="flex-1 border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm"
+                    :class="[mode === 'hybrid' ? 'bg-gray-200 flex-1 border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm cursor-not-allowed' 
+                    : 'flex-1 border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm']"
                 >
             </div>
 
@@ -124,8 +124,8 @@
 
             <input type="text" name="reason" value="{{ old('reason') }}" :required="entry_type === 'Force Entry'" :disabled="entry_type === 'Crossmatch'"
                 placeholder="Justification for Force Entry" 
-                :class="[entry_type === 'Crossmatch' ? 'bg-gray-200 cursor-not-allowed' : '']"
-                class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm mb-4 w-full">
+                :class="[entry_type === 'Crossmatch' ? 'bg-gray-200 border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm mb-4 w-full cursor-not-allowed' : 
+                'border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm mb-4 w-full']">
             @error('reason') <span class="text-red-500 text-sm mb-4">{{ $message }}</span> @enderror
         </div>
 
