@@ -52,14 +52,14 @@ class ServedController extends Controller
         // Filter by date_last_served
         if ($request->filled('date_from')) {
             $query->whereRaw(
-                "STR_TO_DATE(date_last_served, '%m/%d/%Y') >= ?",
+                "STR_TO_DATE(date_last_served, '%m-%d-%Y') >= ?",
                 [$request->date_from . ' 00:00']
             );
         }
 
         if ($request->filled('date_to')) {
             $query->whereRaw(
-                "STR_TO_DATE(date_last_served, '%m/%d/%Y') <= ?",
+                "STR_TO_DATE(date_last_served, '%m-%d-%Y') <= ?",
                 [$request->date_to . ' 23:59']
             );
         }
