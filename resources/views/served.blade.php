@@ -59,7 +59,7 @@
                                         <td class="px-4 py-2">{{ $bene->control_number }}</td>
                                         <td class="px-4 py-2">{{ $bene->first_name }} {{ $bene->middle_name }} {{ $bene->last_name }} {{ $bene->extension_name }}</td>
                                         <td class="px-4 py-2">{{ $bene->birth_month }}/{{ $bene->birth_day }}/{{ $bene->birth_year }}</td>
-                                        <td class="px-4 py-2">{{ $bene->date_last_served }}</td>
+                                        <td class="px-4 py-2">{{ str_replace('-', '/', $bene->date_last_served) }}</td>
                                         <td class="px-4 py-2">{{ $bene->last_served_location }}</td>
                                         <td class="px-4 py-2">{{ $bene->program }}</td>
                                         <td class="px-4 py-2">{{ $bene->event_type }}</td>
