@@ -29,7 +29,7 @@
                             class="border px-3 py-2 rounded"
                         >
 
-                        <button class="bg-blue-600 text-blue px-4 py-2 border rounded">
+                        <button class="bg-blue-600 px-4 py-2 border rounded">
                             Filter
                         </button>
 

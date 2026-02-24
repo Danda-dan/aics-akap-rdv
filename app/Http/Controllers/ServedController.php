@@ -22,6 +22,9 @@ class ServedController extends Controller
                 'birth_year',
                 'last_served_location',
                 'date_last_served',
+                'event_type',
+                'program',
+                'charging',
                 'created_at'
             );
 

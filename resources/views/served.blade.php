@@ -29,7 +29,7 @@
                             class="border px-3 py-2 rounded"
                         >
 
-                        <button class="bg-blue-600 text-blue px-4 py-2 border rounded">
+                        <button class="bg-blue-600 px-4 py-2 border rounded">
                             Filter
                         </button>
 
@@ -47,6 +47,9 @@
                                     <th class="px-4 py-2 text-left">Birthday</th>
                                     <th class="px-4 py-2 text-left">Date Served</th>
                                     <th class="px-4 py-2 text-left">Location</th>
+                                    <th class="px-4 py-2 text-left">Program</th>
+                                    <th class="px-4 py-2 text-left">Event Type</th>
+                                    <th class="px-4 py-2 text-left">Charging</th>
                                     <th class="px-4 py-2 text-left">Date Uploaded</th>
                                 </tr>
                             </thead>
@@ -58,6 +61,9 @@
                                         <td class="px-4 py-2">{{ $bene->birth_month }}/{{ $bene->birth_day }}/{{ $bene->birth_year }}</td>
                                         <td class="px-4 py-2">{{ $bene->date_last_served }}</td>
                                         <td class="px-4 py-2">{{ $bene->last_served_location }}</td>
+                                        <td class="px-4 py-2">{{ $bene->program }}</td>
+                                        <td class="px-4 py-2">{{ $bene->event_type }}</td>
+                                        <td class="px-4 py-2">{{ $bene->charging }}</td>
                                         <td class="px-4 py-2">{{ \Carbon\Carbon::parse($bene->created_at)->format('m/d/Y h:i A') }}</td>
                                     </tr>
                                 @empty
